@@ -27,6 +27,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from './ui/alert-dialog';
+import { Calendar } from './ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import {
   ListTodo,
   Clock,
@@ -36,10 +38,12 @@ import {
   Plus,
   Circle,
   Users,
-  Calendar,
+  Calendar as CalendarIcon,
   MoreVertical,
   Trash2,
 } from 'lucide-react';
+import { format } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 import type { TaskStatus, TimeRangeFilter, Project } from '../types/task';
 import { timeRangeLabels } from '../constants/taskLabels';
 
@@ -253,7 +257,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
           {/* 时间筛选 */}
           <div>
             <h2 className="text-sm font-medium mb-2 text-muted-foreground flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
+              <CalendarIcon className="w-4 h-4" />
               时间范围
             </h2>
             <Select
@@ -273,6 +277,60 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
                 ))}
               </SelectContent>
             </Select>
+
+            {/* 自定义时间日期选择器 */}
+            {filters.timeRange === 'custom' && (
+              <div className="mt-3 space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <span className="text-xs text-muted-foreground">开始日期</span>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start text-left text-sm h-8">
+                          <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                          {filters.customDateStart
+                            ? format(new Date(filters.customDateStart), 'MM/dd', { locale: zhCN })
+                            : '选择'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={filters.customDateStart ? new Date(filters.customDateStart) : undefined}
+                          onSelect={date =>
+                            updateFilters({ customDateStart: date ? date.toISOString() : undefined })
+                          }
+                          locale={zhCN}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs text-muted-foreground">结束日期</span>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start text-left text-sm h-8">
+                          <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                          {filters.customDateEnd
+                            ? format(new Date(filters.customDateEnd), 'MM/dd', { locale: zhCN })
+                            : '选择'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={filters.customDateEnd ? new Date(filters.customDateEnd) : undefined}
+                          onSelect={date =>
+                            updateFilters({ customDateEnd: date ? date.toISOString() : undefined })
+                          }
+                          locale={zhCN}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </ScrollArea>

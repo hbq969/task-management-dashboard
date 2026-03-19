@@ -25,10 +25,11 @@ import { Calendar } from './ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { CalendarIcon, X, Tag as TagIcon, User, Users, ChevronsUpDown } from 'lucide-react';
+import { CalendarIcon, X, Tag as TagIcon, User, Users, ChevronsUpDown, Check, Search } from 'lucide-react';
 import type { Task, Priority, TaskStatus } from '../types/task';
 import { priorityColors, priorityLabels, statusLabels, getProgressColor } from '../constants/taskLabels';
 import { ScrollArea } from './ui/scroll-area';
+import { cn } from './ui/utils';
 
 interface TaskDrawerProps {
   open: boolean;
@@ -56,6 +57,20 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
 
   const [tagInput, setTagInput] = useState('');
   const [relatedPersonsOpen, setRelatedPersonsOpen] = useState(false);
+  const [assigneeOpen, setAssigneeOpen] = useState(false);
+  const [assigneeSearch, setAssigneeSearch] = useState('');
+  const [relatedPersonSearch, setRelatedPersonSearch] = useState('');
+
+  // 搜索过滤人员列表
+  const filteredAssigneePeople = people.filter(person =>
+    person.name.toLowerCase().includes(assigneeSearch.toLowerCase()) ||
+    (person.department && person.department.toLowerCase().includes(assigneeSearch.toLowerCase()))
+  );
+
+  const filteredRelatedPeople = people.filter(person =>
+    person.name.toLowerCase().includes(relatedPersonSearch.toLowerCase()) ||
+    (person.department && person.department.toLowerCase().includes(relatedPersonSearch.toLowerCase()))
+  );
 
   useEffect(() => {
     if (task) {
@@ -215,9 +230,17 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
               <Label>状态</Label>
               <Select
                 value={formData.status}
-                onValueChange={value =>
-                  setFormData(prev => ({ ...prev, status: value as TaskStatus }))
-                }
+                onValueChange={(value: TaskStatus) => {
+                  setFormData(prev => {
+                    let newProgress = prev.progress;
+                    if (value === 'completed') {
+                      newProgress = 100;
+                    } else if (value === 'todo') {
+                      newProgress = 0;
+                    }
+                    return { ...prev, status: value, progress: newProgress };
+                  });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -376,9 +399,17 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
             <div className="relative">
               <Slider
                 value={[formData.progress]}
-                onValueChange={([value]) =>
-                  setFormData(prev => ({ ...prev, progress: value }))
-                }
+                onValueChange={([value]) => {
+                  setFormData(prev => {
+                    let newStatus = prev.status;
+                    if (value === 100) {
+                      newStatus = 'completed';
+                    } else if (value > 0 && prev.status === 'todo') {
+                      newStatus = 'in-progress';
+                    }
+                    return { ...prev, progress: value, status: newStatus };
+                  });
+                }}
                 max={100}
                 step={5}
                 className="w-full"
@@ -403,28 +434,84 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
               <User className="w-4 h-4" />
               负责人
             </Label>
-            <Select
-              value={formData.assigneeId || 'none'}
-              onValueChange={value =>
-                setFormData(prev => ({
-                  ...prev,
-                  assigneeId: value === 'none' ? '' : value,
-                }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="选择负责人" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">无</SelectItem>
-                {people.map(person => (
-                  <SelectItem key={person.id} value={person.id}>
-                    {person.name}
-                    {person.department && ` (${person.department})`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={assigneeOpen} onOpenChange={(open) => {
+              setAssigneeOpen(open);
+              if (!open) setAssigneeSearch('');
+            }}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  className="w-full justify-between"
+                >
+                  {formData.assigneeId ? (
+                    (() => {
+                      const person = people.find(p => p.id === formData.assigneeId);
+                      return person ? (
+                        <span>
+                          {person.name}
+                          {person.department && <span className="text-muted-foreground"> ({person.department})</span>}
+                        </span>
+                      ) : '选择负责人';
+                    })()
+                  ) : (
+                    <span className="text-muted-foreground">选择负责人</span>
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <div className="p-2 border-b">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="搜索负责人..."
+                      value={assigneeSearch}
+                      onChange={e => setAssigneeSearch(e.target.value)}
+                      className="pl-8 h-8"
+                    />
+                  </div>
+                </div>
+                <ScrollArea className="h-48">
+                  {filteredAssigneePeople.length > 0 ? (
+                    <div className="space-y-0.5 p-1">
+                      <div
+                        className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-muted/50 rounded text-sm"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, assigneeId: '' }));
+                          setAssigneeOpen(false);
+                        }}
+                      >
+                        <div className="w-4 h-4" />
+                        <span>无</span>
+                      </div>
+                      {filteredAssigneePeople.map(person => (
+                        <div
+                          key={person.id}
+                          className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-muted/50 rounded text-sm"
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, assigneeId: person.id }));
+                            setAssigneeOpen(false);
+                          }}
+                        >
+                          <Check className={cn("w-4 h-4", formData.assigneeId === person.id ? "opacity-100" : "opacity-0")} />
+                          <span>
+                            {person.name}
+                            {person.department && (
+                              <span className="text-muted-foreground"> ({person.department})</span>
+                            )}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+                      未找到匹配的人员
+                    </div>
+                  )}
+                </ScrollArea>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* 关联人 */}
@@ -433,7 +520,10 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
               <Users className="w-4 h-4" />
               关联人
             </Label>
-            <Popover open={relatedPersonsOpen} onOpenChange={setRelatedPersonsOpen}>
+            <Popover open={relatedPersonsOpen} onOpenChange={(open) => {
+              setRelatedPersonsOpen(open);
+              if (!open) setRelatedPersonSearch('');
+            }}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -485,13 +575,24 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start" onWheel={e => e.stopPropagation()}>
+                <div className="p-2 border-b">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="搜索关联人..."
+                      value={relatedPersonSearch}
+                      onChange={e => setRelatedPersonSearch(e.target.value)}
+                      className="pl-8 h-8"
+                    />
+                  </div>
+                </div>
                 <ScrollArea className="h-48">
-                  {people.length > 0 ? (
-                    <div className="space-y-1 px-1">
-                      {people.map(person => (
+                  {filteredRelatedPeople.length > 0 ? (
+                    <div className="space-y-0.5 p-1">
+                      {filteredRelatedPeople.map(person => (
                         <div
                           key={person.id}
-                          className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-muted/50 rounded"
+                          className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-muted/50 rounded text-sm"
                           onClick={() => {
                             const isSelected = formData.relatedPersonIds.includes(person.id);
                             setFormData(prev => ({
@@ -506,20 +607,18 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                             checked={formData.relatedPersonIds.includes(person.id)}
                             onChange={() => {}}
                           />
-                          <span className="text-sm">
+                          <span>
                             {person.name}
                             {person.department && (
-                              <span className="text-xs text-muted-foreground ml-1">
-                                ({person.department})
-                              </span>
+                              <span className="text-muted-foreground"> ({person.department})</span>
                             )}
                           </span>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="px-3 py-2 text-sm text-muted-foreground">
-                      暂无人员，请先在人员管理中添加
+                    <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+                      {people.length === 0 ? '暂无人员，请先在人员管理中添加' : '未找到匹配的人员'}
                     </div>
                   )}
                 </ScrollArea>

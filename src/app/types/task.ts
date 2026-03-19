@@ -44,7 +44,8 @@ export type TimeRangeFilter =
   | 'thisWeek'
   | 'thisMonth'
   | 'thisQuarter'
-  | 'thisYear';
+  | 'thisYear'
+  | 'custom';
 
 export interface FilterOptions {
   status: TaskStatus | 'all';
@@ -55,6 +56,8 @@ export interface FilterOptions {
   sortOrder: 'asc' | 'desc';
   timeRange: TimeRangeFilter;
   searchQuery: string;
+  customDateStart?: string; // ISO 日期字符串
+  customDateEnd?: string;   // ISO 日期字符串
 }
 
 // Helper functions for time range filtering

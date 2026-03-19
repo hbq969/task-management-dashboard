@@ -27,6 +27,7 @@ export const timeRangeLabels = {
   thisMonth: '本月',
   thisQuarter: '本季度',
   thisYear: '本年',
+  custom: '自定义时间',
 } as const;
 
 // 预定义标签供快速选择

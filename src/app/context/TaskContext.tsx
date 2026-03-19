@@ -294,12 +294,22 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Filter by time range
-    const timeBounds = getTimeRangeBounds(filters.timeRange);
-    if (timeBounds) {
+    if (filters.timeRange === 'custom' && filters.customDateStart && filters.customDateEnd) {
+      const startDate = new Date(filters.customDateStart);
+      const endDate = new Date(filters.customDateEnd);
+      endDate.setHours(23, 59, 59, 999); // 设置为当天的最后一刻
       filtered = filtered.filter(task => {
         const taskDate = new Date(task.createdAt);
-        return taskDate >= timeBounds.start && taskDate <= timeBounds.end;
+        return taskDate >= startDate && taskDate <= endDate;
       });
+    } else {
+      const timeBounds = getTimeRangeBounds(filters.timeRange);
+      if (timeBounds) {
+        filtered = filtered.filter(task => {
+          const taskDate = new Date(task.createdAt);
+          return taskDate >= timeBounds.start && taskDate <= timeBounds.end;
+        });
+      }
     }
 
     // Filter by search query
