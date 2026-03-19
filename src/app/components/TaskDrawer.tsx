@@ -5,6 +5,8 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Badge } from './ui/badge';
+import { Checkbox } from './ui/checkbox';
+import { Slider } from './ui/slider';
 import {
   Select,
   SelectContent,
@@ -23,8 +25,9 @@ import { Calendar } from './ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { CalendarIcon, X, Tag as TagIcon } from 'lucide-react';
+import { CalendarIcon, X, Tag as TagIcon, User, Users, ChevronsUpDown } from 'lucide-react';
 import type { Task, Priority, TaskStatus } from '../types/task';
+import { priorityColors, priorityLabels, statusLabels, TASK_LABELS } from '../constants/taskLabels';
 
 interface TaskDrawerProps {
   open: boolean;
@@ -33,7 +36,7 @@ interface TaskDrawerProps {
 }
 
 export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
-  const { addTask, updateTask, projects } = useTaskContext();
+  const { addTask, updateTask, projects, people } = useTaskContext();
   const isEdit = !!task;
 
   const [formData, setFormData] = useState({
@@ -45,9 +48,13 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
     status: 'todo' as TaskStatus,
     tags: [] as string[],
     notes: '',
+    progress: 0,
+    assigneeId: '' as string,
+    relatedPersonIds: [] as string[],
   });
 
   const [tagInput, setTagInput] = useState('');
+  const [relatedPersonsOpen, setRelatedPersonsOpen] = useState(false);
 
   useEffect(() => {
     if (task) {
@@ -60,6 +67,9 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
         status: task.status,
         tags: task.tags,
         notes: task.notes,
+        progress: task.progress ?? 0,
+        assigneeId: task.assigneeId || '',
+        relatedPersonIds: task.relatedPersonIds ?? [],
       });
     } else {
       setFormData({
@@ -71,6 +81,9 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
         status: 'todo',
         tags: [],
         notes: '',
+        progress: 0,
+        assigneeId: '',
+        relatedPersonIds: [],
       });
     }
     setTagInput('');
@@ -90,6 +103,9 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
       status: formData.status,
       tags: formData.tags,
       notes: formData.notes,
+      progress: formData.progress,
+      assigneeId: formData.assigneeId || undefined,
+      relatedPersonIds: formData.relatedPersonIds,
     };
 
     if (isEdit) {
@@ -119,22 +135,13 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
     }));
   };
 
-  const priorityColors = {
-    high: 'destructive',
-    medium: 'default',
-    low: 'secondary',
-  } as const;
-
-  const priorityLabels = {
-    high: '高',
-    medium: '中',
-    low: '低',
-  };
-
-  const statusLabels = {
-    todo: '待办',
-    'in-progress': '进行中',
-    completed: '已完成',
+  const handleToggleTag = (tag: string) => {
+    setFormData(prev => ({
+      ...prev,
+      tags: prev.tags.includes(tag)
+        ? prev.tags.filter(t => t !== tag)
+        : [...prev.tags, tag],
+    }));
   };
 
   return (
@@ -237,6 +244,11 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="urgent">
+                    <Badge variant={priorityColors.urgent}>
+                      {priorityLabels.urgent}
+                    </Badge>
+                  </SelectItem>
                   <SelectItem value="high">
                     <Badge variant={priorityColors.high}>
                       {priorityLabels.high}
@@ -316,6 +328,22 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                 <TagIcon className="w-4 h-4" />
               </Button>
             </div>
+
+            {/* 快速选择标签 */}
+            <div className="flex flex-wrap gap-1.5">
+              {TASK_LABELS.map(label => (
+                <Badge
+                  key={label}
+                  variant={formData.tags.includes(label) ? 'default' : 'outline'}
+                  className="cursor-pointer text-xs px-2 py-0.5"
+                  onClick={() => handleToggleTag(label)}
+                >
+                  {label}
+                </Badge>
+              ))}
+            </div>
+
+            {/* 已添加的标签 */}
             {formData.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {formData.tags.map(tag => (
@@ -323,12 +351,166 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                     {tag}
                     <X
                       className="w-3 h-3 cursor-pointer hover:text-destructive"
-                      onClick={() => handleRemoveTag(tag)}
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleRemoveTag(tag);
+                      }}
                     />
                   </Badge>
                 ))}
               </div>
             )}
+          </div>
+
+          {/* 进度百分比 */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>进度</Label>
+              <span className="text-sm font-medium text-primary">
+                {formData.progress}%
+              </span>
+            </div>
+            <Slider
+              value={[formData.progress]}
+              onValueChange={([value]) =>
+                setFormData(prev => ({ ...prev, progress: value }))
+              }
+              max={100}
+              step={5}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>未开始</span>
+              <span>已完成</span>
+            </div>
+          </div>
+
+          {/* 负责人 */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <User className="w-4 h-4" />
+              负责人
+            </Label>
+            <Select
+              value={formData.assigneeId || 'none'}
+              onValueChange={value =>
+                setFormData(prev => ({
+                  ...prev,
+                  assigneeId: value === 'none' ? '' : value,
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="选择负责人" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">无</SelectItem>
+                {people.map(person => (
+                  <SelectItem key={person.id} value={person.id}>
+                    {person.name}
+                    {person.department && ` (${person.department})`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* 关联人 */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              关联人
+            </Label>
+            <Popover open={relatedPersonsOpen} onOpenChange={setRelatedPersonsOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  className="w-full justify-between h-auto min-h-9"
+                >
+                  {formData.relatedPersonIds.length > 0 ? (
+                    <div className="flex flex-wrap gap-1 py-0.5">
+                      {formData.relatedPersonIds.map(id => {
+                        const person = people.find(p => p.id === id);
+                        return person ? (
+                          <Badge
+                            key={id}
+                            variant="secondary"
+                            className="gap-1 text-xs"
+                          >
+                            {person.name}
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              className="ml-0.5 hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFormData(prev => ({
+                                  ...prev,
+                                  relatedPersonIds: prev.relatedPersonIds.filter(rid => rid !== id),
+                                }));
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.stopPropagation();
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    relatedPersonIds: prev.relatedPersonIds.filter(rid => rid !== id),
+                                  }));
+                                }
+                              }}
+                            >
+                              <X className="w-3 h-3" />
+                            </span>
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">选择关联人</span>
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <div className="max-h-48 overflow-y-auto">
+                  {people.length > 0 ? (
+                    people.map(person => (
+                      <div
+                        key={person.id}
+                        className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          const isSelected = formData.relatedPersonIds.includes(person.id);
+                          setFormData(prev => ({
+                            ...prev,
+                            relatedPersonIds: isSelected
+                              ? prev.relatedPersonIds.filter(id => id !== person.id)
+                              : [...prev.relatedPersonIds, person.id],
+                          }));
+                        }}
+                      >
+                        <Checkbox
+                          checked={formData.relatedPersonIds.includes(person.id)}
+                          onChange={() => {}}
+                        />
+                        <span className="text-sm">
+                          {person.name}
+                          {person.department && (
+                            <span className="text-xs text-muted-foreground ml-1">
+                              ({person.department})
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-3 py-2 text-sm text-muted-foreground">
+                      暂无人员，请先在人员管理中添加
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* 进度备注 */}

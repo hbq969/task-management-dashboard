@@ -25,6 +25,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from './ui/alert-dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './ui/tooltip';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import {
@@ -117,7 +123,7 @@ export function TaskList({ onEditTask }: TaskListProps) {
   }
 
   return (
-    <>
+    <TooltipProvider>
       <motion.div
         className="space-y-2"
         variants={containerVariants}
@@ -157,16 +163,25 @@ export function TaskList({ onEditTask }: TaskListProps) {
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <div
-                            className={`text-sm font-medium cursor-pointer hover:text-primary flex-1 ${
-                              task.status === 'completed'
-                                ? 'line-through text-muted-foreground'
-                                : ''
-                            }`}
-                            onClick={() => onEditTask(task)}
-                          >
-                            {task.title}
-                          </div>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div
+                                className={`text-sm font-medium cursor-pointer hover:text-primary flex-1 ${
+                                  task.status === 'completed'
+                                    ? 'line-through text-muted-foreground'
+                                    : ''
+                                }`}
+                                onClick={() => onEditTask(task)}
+                              >
+                                {task.title}
+                              </div>
+                            </TooltipTrigger>
+                            {task.description && (
+                              <TooltipContent side="top" className="max-w-sm">
+                                {task.description}
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
@@ -369,6 +384,6 @@ export function TaskList({ onEditTask }: TaskListProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </TooltipProvider>
   );
 }
