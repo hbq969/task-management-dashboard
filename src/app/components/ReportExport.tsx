@@ -29,13 +29,70 @@ interface ReportExportProps {
 type ExportFormat = 'markdown' | 'plaintext';
 
 const markdownToPlainText = (md: string): string => {
-  return md
-    .replace(/^#{1,6}\s+/gm, '')      // 移除标题标记
-    .replace(/\*\*(.+?)\*\*/g, '$1')  // 移除粗体
-    .replace(/\*(.+?)\*/g, '$1')      // 移除斜体
-    .replace(/^[-*]\s+/gm, '• ')      // 列表标记转换为圆点
-    .replace(/`(.+?)`/g, '$1')        // 移除代码标记
-    .trim();
+  const lines = md.split('\n');
+  const result: string[] = [];
+  let currentProject = '';
+  let projectIndex = 0;
+  let taskIndex = 0;
+
+  const chineseNumbers = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // 跳过空行
+    if (!line) continue;
+
+    // 一级标题 - 报告类型，跳过
+    if (line.startsWith('# ') && !line.startsWith('## ')) {
+      continue;
+    }
+
+    // 时间范围和统计信息 - 跳过
+    if (line.startsWith('**时间范围**') || line.startsWith('**任务统计**')) {
+      continue;
+    }
+
+    // 二级标题 - 项目名
+    if (line.startsWith('## ')) {
+      currentProject = line.replace(/^##\s+/, '').replace(/\*\*/g, '');
+      projectIndex++;
+      taskIndex = 0;
+      const prefix = projectIndex <= 10 ? chineseNumbers[projectIndex - 1] : projectIndex.toString();
+      result.push(`${prefix}、${currentProject}`);
+      continue;
+    }
+
+    // 三级标题 - 任务名
+    if (line.startsWith('### ')) {
+      taskIndex++;
+      const taskName = line.replace(/^###\s+/, '').replace(/\*\*/g, '');
+      // 查找后续的状态和进度信息
+      let status = '';
+      let progress = '';
+      for (let j = i + 1; j < lines.length && lines[j].trim().startsWith('- '); j++) {
+        const detail = lines[j].trim();
+        if (detail.includes('状态：')) {
+          status = detail.replace(/- 状态：/, '').trim();
+        }
+        if (detail.includes('进度：')) {
+          progress = detail.replace(/- 进度：/, '').trim();
+        }
+      }
+      // 构建任务行
+      let taskLine = `${taskIndex}. ${taskName}`;
+      const details: string[] = [];
+      if (status) details.push(status);
+      if (progress) details.push(progress);
+      if (details.length > 0) {
+        taskLine += `（${details.join('，')}）`;
+      }
+      result.push(taskLine);
+      continue;
+    }
+  }
+
+  return result.join('\n');
 };
 
 export function ReportExport({ open, onClose }: ReportExportProps) {

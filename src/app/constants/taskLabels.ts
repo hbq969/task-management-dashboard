@@ -42,3 +42,12 @@ export const TASK_LABELS = [
   '后端',
   '文档',
 ] as const;
+
+// 进度颜色渐变工具函数
+export const getProgressColor = (progress: number): string => {
+  if (progress <= 20) return 'bg-red-500';
+  if (progress <= 40) return 'bg-orange-500';
+  if (progress <= 60) return 'bg-yellow-500';
+  if (progress <= 80) return 'bg-blue-500';
+  return 'bg-green-500';
+};

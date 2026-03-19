@@ -27,7 +27,7 @@ import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { CalendarIcon, X, Tag as TagIcon, User, Users, ChevronsUpDown } from 'lucide-react';
 import type { Task, Priority, TaskStatus } from '../types/task';
-import { priorityColors, priorityLabels, statusLabels, TASK_LABELS } from '../constants/taskLabels';
+import { priorityColors, priorityLabels, statusLabels, getProgressColor } from '../constants/taskLabels';
 import { ScrollArea } from './ui/scroll-area';
 
 interface TaskDrawerProps {
@@ -37,7 +37,7 @@ interface TaskDrawerProps {
 }
 
 export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
-  const { addTask, updateTask, projects, people } = useTaskContext();
+  const { addTask, updateTask, projects, people, allTags } = useTaskContext();
   const isEdit = !!task;
 
   const [formData, setFormData] = useState({
@@ -331,18 +331,20 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
             </div>
 
             {/* 快速选择标签 */}
-            <div className="flex flex-wrap gap-1.5">
-              {TASK_LABELS.map(label => (
-                <Badge
-                  key={label}
-                  variant={formData.tags.includes(label) ? 'default' : 'outline'}
-                  className="cursor-pointer text-xs px-2 py-0.5"
-                  onClick={() => handleToggleTag(label)}
-                >
-                  {label}
-                </Badge>
-              ))}
-            </div>
+            {allTags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {allTags.map(label => (
+                  <Badge
+                    key={label}
+                    variant={formData.tags.includes(label) ? 'default' : 'outline'}
+                    className="cursor-pointer text-xs px-2 py-0.5"
+                    onClick={() => handleToggleTag(label)}
+                  >
+                    {label}
+                  </Badge>
+                ))}
+              </div>
+            )}
 
             {/* 已添加的标签 */}
             {formData.tags.length > 0 && (
@@ -367,19 +369,28 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>进度</Label>
-              <span className="text-sm font-medium text-primary">
+              <span className={`text-sm font-medium ${getProgressColor(formData.progress).replace('bg-', 'text-')}`}>
                 {formData.progress}%
               </span>
             </div>
-            <Slider
-              value={[formData.progress]}
-              onValueChange={([value]) =>
-                setFormData(prev => ({ ...prev, progress: value }))
-              }
-              max={100}
-              step={5}
-              className="w-full"
-            />
+            <div className="relative">
+              <Slider
+                value={[formData.progress]}
+                onValueChange={([value]) =>
+                  setFormData(prev => ({ ...prev, progress: value }))
+                }
+                max={100}
+                step={5}
+                className="w-full"
+              />
+              {/* 进度颜色条 */}
+              <div className="absolute inset-0 pointer-events-none">
+                <div
+                  className={`h-full rounded-full transition-all ${getProgressColor(formData.progress)}`}
+                  style={{ width: `${formData.progress}%`, opacity: 0.2 }}
+                />
+              </div>
+            </div>
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>未开始</span>
               <span>已完成</span>
@@ -473,7 +484,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start" onWheel={e => e.stopPropagation()}>
                 <ScrollArea className="h-48">
                   {people.length > 0 ? (
                     <div className="space-y-1 px-1">

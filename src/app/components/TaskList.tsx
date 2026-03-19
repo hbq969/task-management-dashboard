@@ -47,7 +47,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import type { Task } from '../types/task';
-import { priorityColors, priorityLabels, statusLabels } from '../constants/taskLabels';
+import { priorityColors, priorityLabels, statusLabels, getProgressColor } from '../constants/taskLabels';
 
 interface TaskListProps {
   onEditTask: (task: Task) => void;
@@ -240,9 +240,9 @@ export function TaskList({ onEditTask }: TaskListProps) {
                           {/* 进度 */}
                           {(task.progress ?? 0) > 0 && (
                             <Badge variant="outline" className="gap-1 text-[10px] px-1.5 py-0 h-4">
-                              <div className="w-8 h-1 bg-secondary rounded-full overflow-hidden">
+                              <div className="w-8 h-1.5 bg-secondary rounded-full overflow-hidden">
                                 <div
-                                  className="h-full bg-primary transition-all"
+                                  className={`h-full transition-all ${getProgressColor(task.progress)}`}
                                   style={{ width: `${task.progress}%` }}
                                 />
                               </div>
