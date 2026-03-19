@@ -6,6 +6,7 @@ import {
   Person,
   getTimeRangeBounds,
 } from '../types/task';
+import { readData, writeData, migrateFromLocalStorage, StorageData } from '../services/storage';
 
 interface TaskContextType {
   tasks: Task[];
@@ -15,6 +16,7 @@ interface TaskContextType {
   selectedTaskIds: string[];
   currentPage: number;
   pageSize: number;
+  isLoaded: boolean;
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateTask: (id: string, updates: Partial<Task>) => void;
   deleteTask: (id: string) => void;
@@ -49,10 +51,6 @@ interface TaskContextType {
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
-
-const STORAGE_KEY = 'todo-tasks';
-const PROJECTS_KEY = 'todo-projects';
-const PEOPLE_KEY = 'todo-people';
 
 const defaultProjects: Project[] = [
   { id: '1', name: '工作项目', color: '#3b82f6', taskCount: 0 },
@@ -137,36 +135,10 @@ const getSampleTasks = (): Task[] => {
 };
 
 export function TaskProvider({ children }: { children: React.ReactNode }) {
-  const [tasks, setTasks] = useState<Task[]>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      // Migrate old tasks to include new fields
-      return parsed.map((task: Task) => ({
-        ...task,
-        progress: task.progress ?? 0,
-        relatedPersonIds: task.relatedPersonIds ?? [],
-      }));
-    }
-    // 首次访问时提供示例数据
-    const sampleTasks = getSampleTasks();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sampleTasks));
-    return sampleTasks;
-  });
-
-  const [projects, setProjects] = useState<Project[]>(() => {
-    const stored = localStorage.getItem(PROJECTS_KEY);
-    return stored ? JSON.parse(stored) : defaultProjects;
-  });
-
-  const [people, setPeople] = useState<Person[]>(() => {
-    const stored = localStorage.getItem(PEOPLE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    localStorage.setItem(PEOPLE_KEY, JSON.stringify(defaultPeople));
-    return defaultPeople;
-  });
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const [filters, setFilters] = useState<FilterOptions>({
     status: 'all',
@@ -183,22 +155,59 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSizeState] = useState(10);
 
+  // 初始化数据加载
+  useEffect(() => {
+    const loadData = async () => {
+      // 首先尝试从文件读取数据
+      let data = await readData();
+
+      if (!data) {
+        // 如果文件没有数据，尝试从 localStorage 迁移
+        data = await migrateFromLocalStorage();
+      }
+
+      if (data) {
+        // 迁移旧任务字段
+        const migratedTasks = data.tasks.map((task: Task) => ({
+          ...task,
+          progress: task.progress ?? 0,
+          relatedPersonIds: task.relatedPersonIds ?? [],
+        }));
+        setTasks(migratedTasks);
+        setProjects(data.projects);
+        setPeople(data.people);
+      } else {
+        // 首次启动：加载示例数据
+        const sampleTasks = getSampleTasks();
+        setTasks(sampleTasks);
+        setProjects(defaultProjects);
+        setPeople(defaultPeople);
+
+        // 保存初始数据
+        await writeData({
+          tasks: sampleTasks,
+          projects: defaultProjects,
+          people: defaultPeople,
+        });
+      }
+
+      setIsLoaded(true);
+    };
+
+    loadData();
+  }, []);
+
   const setPageSize = useCallback((size: number) => {
     setPageSizeState(size);
     setCurrentPage(1);
   }, []);
 
+  // 统一数据持久化
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-  }, [tasks]);
-
-  useEffect(() => {
-    localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
-  }, [projects]);
-
-  useEffect(() => {
-    localStorage.setItem(PEOPLE_KEY, JSON.stringify(people));
-  }, [people]);
+    if (isLoaded) {
+      writeData({ tasks, projects, people });
+    }
+  }, [tasks, projects, people, isLoaded]);
 
   // Update project task counts when tasks change
   useEffect(() => {
@@ -568,6 +577,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         selectedTaskIds,
         currentPage,
         pageSize,
+        isLoaded,
         addTask,
         updateTask,
         deleteTask,

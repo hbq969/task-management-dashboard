@@ -58,6 +58,10 @@ const markdownToPlainText = (md: string): string => {
       currentProject = line.replace(/^##\s+/, '').replace(/\*\*/g, '');
       projectIndex++;
       taskIndex = 0;
+      // 第一个项目前不添加空行，后续项目前添加空行间隔
+      if (projectIndex > 1) {
+        result.push('');
+      }
       const prefix = projectIndex <= 10 ? chineseNumbers[projectIndex - 1] : projectIndex.toString();
       result.push(`${prefix}、${currentProject}`);
       continue;
@@ -190,7 +194,14 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
               <ScrollArea className="h-[350px] border rounded-md bg-muted/30">
                 <div className="p-4">
                   {format === 'markdown' ? (
-                    <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <div className="prose prose-sm max-w-none dark:prose-invert
+                      prose-headings:mt-6 prose-headings:mb-3
+                      prose-h1:text-xl prose-h1:font-bold prose-h1:border-b prose-h1:pb-2
+                      prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-8 prose-h2:pt-2
+                      prose-h3:text-base prose-h3:font-medium prose-h3:mt-4
+                      prose-p:my-2 prose-li:my-1
+                      prose-ul:list-disc prose-ul:pl-4
+                      prose-strong:text-foreground">
                       <ReactMarkdown>{report}</ReactMarkdown>
                     </div>
                   ) : (
