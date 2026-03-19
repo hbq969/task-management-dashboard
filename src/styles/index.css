@@ -2,10 +2,10 @@
 @import './tailwind.css';
 @import './theme.css';
 
-/* 全局滚动条样式 - 1px 细滚动条 */
+/* 全局滚动条样式 - 极细美观滚动条 */
 ::-webkit-scrollbar {
-  width: 1px;
-  height: 1px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -13,16 +13,21 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 1px;
+  background: color-mix(in srgb, var(--border) 40%, transparent);
+  border-radius: 2px;
+  transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--muted-foreground);
+  background: color-mix(in srgb, var(--muted-foreground) 60%, transparent);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* Firefox 滚动条样式 */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
+  scrollbar-color: color-mix(in srgb, var(--border) 40%, transparent) transparent;
 }
