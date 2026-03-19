@@ -28,7 +28,6 @@ import { zhCN } from 'date-fns/locale';
 import { CalendarIcon, X, Tag as TagIcon, User, Users, ChevronsUpDown, Check, Search } from 'lucide-react';
 import type { Task, Priority, TaskStatus } from '../types/task';
 import { priorityColors, priorityLabels, statusLabels, getProgressColor } from '../constants/taskLabels';
-import { ScrollArea } from './ui/scroll-area';
 import { cn } from './ui/utils';
 
 interface TaskDrawerProps {
@@ -404,7 +403,10 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                     let newStatus = prev.status;
                     if (value === 100) {
                       newStatus = 'completed';
-                    } else if (value > 0 && prev.status === 'todo') {
+                    } else if (value === 0) {
+                      newStatus = 'todo';
+                    } else if (value > 0 && value < 100 && prev.status !== 'in-progress') {
+                      // 进度在 1-99 之间时，如果当前状态不是"进行中"，则改为"进行中"
                       newStatus = 'in-progress';
                     }
                     return { ...prev, progress: value, status: newStatus };
@@ -460,7 +462,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start" onWheel={e => e.stopPropagation()}>
                 <div className="p-2 border-b">
                   <div className="relative">
                     <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -472,7 +474,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                     />
                   </div>
                 </div>
-                <ScrollArea className="h-48">
+                <div className="max-h-48 overflow-y-auto">
                   {filteredAssigneePeople.length > 0 ? (
                     <div className="space-y-0.5 p-1">
                       <div
@@ -509,7 +511,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                       未找到匹配的人员
                     </div>
                   )}
-                </ScrollArea>
+                </div>
               </PopoverContent>
             </Popover>
           </div>
@@ -586,7 +588,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                     />
                   </div>
                 </div>
-                <ScrollArea className="h-48">
+                <div className="max-h-48 overflow-y-auto">
                   {filteredRelatedPeople.length > 0 ? (
                     <div className="space-y-0.5 p-1">
                       {filteredRelatedPeople.map(person => (
@@ -621,7 +623,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                       {people.length === 0 ? '暂无人员，请先在人员管理中添加' : '未找到匹配的人员'}
                     </div>
                   )}
-                </ScrollArea>
+                </div>
               </PopoverContent>
             </Popover>
           </div>
