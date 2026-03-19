@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTaskContext } from '../context/TaskContext';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -6,9 +7,6 @@ import { Checkbox } from './ui/checkbox';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from './ui/card';
 import {
   DropdownMenu,
@@ -37,18 +35,37 @@ import {
   Tag as TagIcon,
   Clock,
   FileText,
+  User,
+  Users,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import type { Task } from '../types/task';
+import { priorityColors, priorityLabels, statusLabels } from '../constants/taskLabels';
 
 interface TaskListProps {
   onEditTask: (task: Task) => void;
 }
 
 export function TaskList({ onEditTask }: TaskListProps) {
-  const { getFilteredTasks, updateTask, deleteTask, projects } = useTaskContext();
+  const { getFilteredTasks, updateTask, deleteTask, projects, people, currentPage, pageSize, setCurrentPage, setPageSize } = useTaskContext();
   const tasks = getFilteredTasks();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+
+  // Pagination
+  const totalPages = pageSize === Infinity ? 1 : Math.ceil(tasks.length / pageSize);
+  const paginatedTasks = pageSize === Infinity ? tasks : tasks.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  // Reset to page 1 if current page exceeds total
+  useMemo(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages, setCurrentPage]);
 
   const handleStatusToggle = (task: Task) => {
     const newStatus = task.status === 'completed' ? 'todo' : 'completed';
@@ -68,26 +85,25 @@ export function TaskList({ onEditTask }: TaskListProps) {
     }
   };
 
-  const getProject = (projectId: string) => {
-    return projects.find(p => p.id === projectId);
+  // Memoized lookup maps for performance
+  const projectMap = useMemo(() => new Map(projects.map(p => [p.id, p])), [projects]);
+  const personMap = useMemo(() => new Map(people.map(p => [p.id, p])), [people]);
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.03,
+      },
+    },
   };
 
-  const priorityColors = {
-    high: 'destructive',
-    medium: 'default',
-    low: 'secondary',
-  } as const;
-
-  const priorityLabels = {
-    high: '高优先级',
-    medium: '中优先级',
-    low: '低优先级',
-  };
-
-  const statusLabels = {
-    todo: '待办',
-    'in-progress': '进行中',
-    completed: '已完成',
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0 },
+    exit: { opacity: 0, x: -50 },
   };
 
   if (tasks.length === 0) {
@@ -102,134 +118,241 @@ export function TaskList({ onEditTask }: TaskListProps) {
 
   return (
     <>
-      <div className="space-y-3">
-        {tasks.map(task => {
-          const project = getProject(task.projectId);
-          const isOverdue =
-            task.dueDate &&
-            new Date(task.dueDate) < new Date() &&
-            task.status !== 'completed';
+      <motion.div
+        className="space-y-2"
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+      >
+        <AnimatePresence mode="popLayout">
+          {paginatedTasks.map(task => {
+            const project = projectMap.get(task.projectId);
+            const assignee = task.assigneeId ? personMap.get(task.assigneeId) : null;
+            const relatedPersons = task.relatedPersonIds
+              .map(id => personMap.get(id))
+              .filter(Boolean);
+            const isOverdue =
+              task.dueDate &&
+              new Date(task.dueDate) < new Date() &&
+              task.status !== 'completed';
 
-          return (
-            <Card
-              key={task.id}
-              className={`transition-all hover:shadow-md ${
-                task.status === 'completed' ? 'opacity-60' : ''
-              }`}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    checked={task.status === 'completed'}
-                    onCheckedChange={() => handleStatusToggle(task)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <CardTitle
-                        className={`text-base cursor-pointer hover:text-primary ${
-                          task.status === 'completed'
-                            ? 'line-through text-muted-foreground'
-                            : ''
-                        }`}
-                        onClick={() => onEditTask(task)}
-                      >
-                        {task.title}
-                      </CardTitle>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => onEditTask(task)}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            编辑
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteClick(task)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            删除
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                    {task.description && (
-                      <CardDescription className="mt-1 line-clamp-2">
-                        {task.description}
-                      </CardDescription>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="pt-0 pb-4">
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  {/* 项目 */}
-                  {project && (
-                    <Badge variant="outline" className="gap-1">
-                      <div
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: project.color }}
+            return (
+              <motion.div
+                key={task.id}
+                variants={itemVariants}
+                exit="exit"
+                layout
+              >
+                <Card
+                  className={`transition-all hover:shadow-sm ${
+                    task.status === 'completed' ? 'opacity-60' : ''
+                  }`}
+                >
+                  <CardContent className="py-2.5 px-3">
+                    <div className="flex items-start gap-2.5">
+                      <Checkbox
+                        checked={task.status === 'completed'}
+                        onCheckedChange={() => handleStatusToggle(task)}
+                        className="mt-0.5"
                       />
-                      {project.name}
-                    </Badge>
-                  )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div
+                            className={`text-sm font-medium cursor-pointer hover:text-primary flex-1 ${
+                              task.status === 'completed'
+                                ? 'line-through text-muted-foreground'
+                                : ''
+                            }`}
+                            onClick={() => onEditTask(task)}
+                          >
+                            {task.title}
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                <MoreVertical className="h-3.5 w-3.5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => onEditTask(task)}>
+                                <Edit className="w-4 h-4 mr-2" />
+                                编辑
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteClick(task)}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                删除
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
 
-                  {/* 状态 */}
-                  <Badge
-                    variant={
-                      task.status === 'completed'
-                        ? 'default'
-                        : task.status === 'in-progress'
-                        ? 'secondary'
-                        : 'outline'
-                    }
-                  >
-                    <Clock className="w-3 h-3 mr-1" />
-                    {statusLabels[task.status]}
-                  </Badge>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                          {/* 项目 */}
+                          {project && (
+                            <Badge variant="outline" className="gap-1 text-[10px] px-1.5 py-0 h-4">
+                              <div
+                                className="w-1.5 h-1.5 rounded-full"
+                                style={{ backgroundColor: project.color }}
+                              />
+                              {project.name}
+                            </Badge>
+                          )}
 
-                  {/* 优先级 */}
-                  <Badge variant={priorityColors[task.priority]}>
-                    {priorityLabels[task.priority]}
-                  </Badge>
+                          {/* 状态 */}
+                          <Badge
+                            variant={
+                              task.status === 'completed'
+                                ? 'default'
+                                : task.status === 'in-progress'
+                                ? 'secondary'
+                                : 'outline'
+                            }
+                            className="text-[10px] px-1.5 py-0 h-4"
+                          >
+                            <Clock className="w-2.5 h-2.5 mr-0.5" />
+                            {statusLabels[task.status]}
+                          </Badge>
 
-                  {/* 截止日期 */}
-                  {task.dueDate && (
-                    <Badge
-                      variant={isOverdue ? 'destructive' : 'outline'}
-                      className="gap-1"
+                          {/* 优先级 */}
+                          <Badge variant={priorityColors[task.priority]} className="text-[10px] px-1.5 py-0 h-4">
+                            {priorityLabels[task.priority]}
+                          </Badge>
+
+                          {/* 进度 */}
+                          {(task.progress ?? 0) > 0 && (
+                            <Badge variant="outline" className="gap-1 text-[10px] px-1.5 py-0 h-4">
+                              <div className="w-8 h-1 bg-secondary rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-primary transition-all"
+                                  style={{ width: `${task.progress}%` }}
+                                />
+                              </div>
+                              {task.progress}%
+                            </Badge>
+                          )}
+
+                          {/* 负责人 */}
+                          {assignee && (
+                            <Badge variant="secondary" className="gap-0.5 text-[10px] px-1.5 py-0 h-4">
+                              <User className="w-2.5 h-2.5" />
+                              {assignee.name}
+                            </Badge>
+                          )}
+
+                          {/* 截止日期 */}
+                          {task.dueDate && (
+                            <Badge
+                              variant={isOverdue ? 'destructive' : 'outline'}
+                              className="gap-0.5 text-[10px] px-1.5 py-0 h-4"
+                            >
+                              <Calendar className="w-2.5 h-2.5" />
+                              {format(new Date(task.dueDate), 'MM/dd', { locale: zhCN })}
+                            </Badge>
+                          )}
+
+                          {/* 标签 */}
+                          {task.tags.slice(0, 3).map(tag => (
+                            <Badge key={tag} variant="secondary" className="gap-0.5 text-[10px] px-1.5 py-0 h-4">
+                              <TagIcon className="w-2.5 h-2.5" />
+                              {tag}
+                            </Badge>
+                          ))}
+                          {task.tags.length > 3 && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                              +{task.tags.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* 关联人 */}
+                        {relatedPersons.length > 0 && (
+                          <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <Users className="w-2.5 h-2.5" />
+                            <span>{relatedPersons.map(p => p?.name).join('、')}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </motion.div>
+
+      {/* Pagination Controls */}
+      {tasks.length > 0 && (
+        <div className="flex items-center justify-center gap-2 mt-4 pt-3 border-t">
+          {pageSize !== Infinity && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-2"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-7 w-7 p-0 text-xs"
+                      onClick={() => setCurrentPage(pageNum)}
                     >
-                      <Calendar className="w-3 h-3" />
-                      {format(new Date(task.dueDate), 'MM月dd日', { locale: zhCN })}
-                    </Badge>
-                  )}
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
 
-                  {/* 标签 */}
-                  {task.tags.map(tag => (
-                    <Badge key={tag} variant="secondary" className="gap-1">
-                      <TagIcon className="w-3 h-3" />
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-2"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(currentPage + 1)}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </>
+          )}
 
-                {/* 进度备注 */}
-                {task.notes && (
-                  <div className="mt-3 p-2 bg-muted/50 rounded text-sm text-muted-foreground">
-                    <p className="line-clamp-2">{task.notes}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+          <Button
+            variant={pageSize === Infinity ? 'default' : 'outline'}
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => setPageSize(pageSize === Infinity ? 10 : Infinity)}
+          >
+            {pageSize === Infinity ? '分页' : '全部'}
+          </Button>
+
+          <span className="text-xs text-muted-foreground ml-2">
+            共 {tasks.length} 条
+          </span>
+        </div>
+      )}
 
       {/* 删除确认对话框 */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

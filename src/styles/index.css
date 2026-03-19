@@ -13,22 +13,16 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
+  background: var(--border);
   border-radius: 1px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: var(--muted-foreground);
 }
 
 /* Firefox 滚动条样式 */
 * {
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--border)) transparent;
-}
-
-/* 确保 Firefox 也使用细滚动条 */
-*::-webkit-scrollbar {
-  width: 1px;
-  height: 1px;
+  scrollbar-color: var(--border) transparent;
 }
