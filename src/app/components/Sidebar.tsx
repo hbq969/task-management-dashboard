@@ -1,8 +1,32 @@
+import { useMemo, useState } from 'react';
 import { useTaskContext } from '../context/TaskContext';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './ui/alert-dialog';
 import {
   ListTodo,
   Clock,
@@ -11,22 +35,30 @@ import {
   Tag,
   Plus,
   Circle,
+  Users,
+  Calendar,
+  MoreVertical,
+  Trash2,
 } from 'lucide-react';
-import type { TaskStatus } from '../types/task';
+import type { TaskStatus, TimeRangeFilter, Project } from '../types/task';
+import { timeRangeLabels } from '../constants/taskLabels';
 
 interface SidebarProps {
   onCreateProject: () => void;
+  onOpenPersonManager: () => void;
 }
 
-export function Sidebar({ onCreateProject }: SidebarProps) {
-  const { tasks, projects, filters, updateFilters, allTags } = useTaskContext();
+export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) {
+  const { tasks, projects, filters, updateFilters, allTags, people, deleteProject } = useTaskContext();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
-  const statusCounts = {
+  const statusCounts = useMemo(() => ({
     all: tasks.length,
     todo: tasks.filter(t => t.status === 'todo').length,
     'in-progress': tasks.filter(t => t.status === 'in-progress').length,
     completed: tasks.filter(t => t.status === 'completed').length,
-  };
+  }), [tasks]);
 
   const handleStatusFilter = (status: TaskStatus | 'all') => {
     updateFilters({ status });
@@ -43,16 +75,30 @@ export function Sidebar({ onCreateProject }: SidebarProps) {
     updateFilters({ tags: newTags });
   };
 
+  const handleDeleteClick = (project: Project) => {
+    setProjectToDelete(project);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (projectToDelete) {
+      deleteProject(projectToDelete.id);
+      setDeleteDialogOpen(false);
+      setProjectToDelete(null);
+    }
+  };
+
   return (
-    <div className="w-64 border-r bg-muted/30 flex flex-col h-full">
-      <div className="p-4 border-b">
+    <>
+      <div className="w-64 border-r bg-muted/30 flex flex-col h-full overflow-hidden">
+      <div className="shrink-0 p-4 border-b">
         <h1 className="font-semibold text-lg flex items-center gap-2">
           <ListTodo className="w-5 h-5 text-primary" />
           任务管理
         </h1>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="p-4 space-y-6">
           {/* 状态筛选 */}
           <div>
@@ -135,22 +181,46 @@ export function Sidebar({ onCreateProject }: SidebarProps) {
                 全部项目
               </Button>
               {projects.map(project => (
-                <Button
+                <div
                   key={project.id}
-                  variant={filters.projectId === project.id ? 'secondary' : 'ghost'}
-                  className="w-full justify-start"
-                  size="sm"
-                  onClick={() => handleProjectFilter(project.id)}
+                  className="flex items-center group"
                 >
-                  <div
-                    className="w-3 h-3 rounded-full mr-2"
-                    style={{ backgroundColor: project.color }}
-                  />
-                  {project.name}
-                  <Badge variant="outline" className="ml-auto">
-                    {project.taskCount}
-                  </Badge>
-                </Button>
+                  <Button
+                    variant={filters.projectId === project.id ? 'secondary' : 'ghost'}
+                    className="flex-1 justify-start"
+                    size="sm"
+                    onClick={() => handleProjectFilter(project.id)}
+                  >
+                    <div
+                      className="w-3 h-3 rounded-full mr-2"
+                      style={{ backgroundColor: project.color }}
+                    />
+                    <span className="truncate">{project.name}</span>
+                    <Badge variant="outline" className="ml-auto">
+                      {project.taskCount}
+                    </Badge>
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <MoreVertical className="h-3.5 w-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => handleDeleteClick(project)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        删除项目
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               ))}
             </div>
           </div>
@@ -177,8 +247,68 @@ export function Sidebar({ onCreateProject }: SidebarProps) {
               </div>
             </>
           )}
+
+          <Separator />
+
+          {/* 时间筛选 */}
+          <div>
+            <h2 className="text-sm font-medium mb-2 text-muted-foreground flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              时间范围
+            </h2>
+            <Select
+              value={filters.timeRange}
+              onValueChange={value =>
+                updateFilters({ timeRange: value as TimeRangeFilter })
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(timeRangeLabels).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </ScrollArea>
+
+      {/* 底部操作区 */}
+      <div className="shrink-0 p-4 border-t">
+        <Button
+          variant="outline"
+          className="w-full justify-start"
+          onClick={onOpenPersonManager}
+        >
+          <Users className="w-4 h-4 mr-2" />
+          人员管理
+          <Badge variant="secondary" className="ml-auto">
+            {people.length}
+          </Badge>
+        </Button>
+      </div>
     </div>
+
+      {/* 删除项目确认对话框 */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除项目？</AlertDialogTitle>
+            <AlertDialogDescription>
+              此操作将删除项目 "{projectToDelete?.name}" 及其下的所有任务（共 {projectToDelete?.taskCount} 个）。
+              此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm}>删除</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

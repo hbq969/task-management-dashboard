@@ -28,6 +28,7 @@ import { zhCN } from 'date-fns/locale';
 import { CalendarIcon, X, Tag as TagIcon, User, Users, ChevronsUpDown } from 'lucide-react';
 import type { Task, Priority, TaskStatus } from '../types/task';
 import { priorityColors, priorityLabels, statusLabels, TASK_LABELS } from '../constants/taskLabels';
+import { ScrollArea } from './ui/scroll-area';
 
 interface TaskDrawerProps {
   open: boolean;
@@ -473,42 +474,44 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                <div className="max-h-48 overflow-y-auto">
+                <ScrollArea className="h-48">
                   {people.length > 0 ? (
-                    people.map(person => (
-                      <div
-                        key={person.id}
-                        className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-muted/50"
-                        onClick={() => {
-                          const isSelected = formData.relatedPersonIds.includes(person.id);
-                          setFormData(prev => ({
-                            ...prev,
-                            relatedPersonIds: isSelected
-                              ? prev.relatedPersonIds.filter(id => id !== person.id)
-                              : [...prev.relatedPersonIds, person.id],
-                          }));
-                        }}
-                      >
-                        <Checkbox
-                          checked={formData.relatedPersonIds.includes(person.id)}
-                          onChange={() => {}}
-                        />
-                        <span className="text-sm">
-                          {person.name}
-                          {person.department && (
-                            <span className="text-xs text-muted-foreground ml-1">
-                              ({person.department})
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    ))
+                    <div className="space-y-1 px-1">
+                      {people.map(person => (
+                        <div
+                          key={person.id}
+                          className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-muted/50 rounded"
+                          onClick={() => {
+                            const isSelected = formData.relatedPersonIds.includes(person.id);
+                            setFormData(prev => ({
+                              ...prev,
+                              relatedPersonIds: isSelected
+                                ? prev.relatedPersonIds.filter(id => id !== person.id)
+                                : [...prev.relatedPersonIds, person.id],
+                            }));
+                          }}
+                        >
+                          <Checkbox
+                            checked={formData.relatedPersonIds.includes(person.id)}
+                            onChange={() => {}}
+                          />
+                          <span className="text-sm">
+                            {person.name}
+                            {person.department && (
+                              <span className="text-xs text-muted-foreground ml-1">
+                                ({person.department})
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   ) : (
                     <div className="px-3 py-2 text-sm text-muted-foreground">
                       暂无人员，请先在人员管理中添加
                     </div>
                   )}
-                </div>
+                </ScrollArea>
               </PopoverContent>
             </Popover>
           </div>

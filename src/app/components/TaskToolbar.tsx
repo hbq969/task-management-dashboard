@@ -1,5 +1,6 @@
 import { useTaskContext } from '../context/TaskContext';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
 import {
   Select,
   SelectContent,
@@ -7,14 +8,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
-import { Plus, ArrowUpDown } from 'lucide-react';
+import { Plus, ArrowUpDown, Search, X, Database, FileText } from 'lucide-react';
 import type { Priority } from '../types/task';
 
 interface TaskToolbarProps {
   onCreateTask: () => void;
+  onOpenDataManager?: () => void;
+  onOpenReportExport?: () => void;
 }
 
-export function TaskToolbar({ onCreateTask }: TaskToolbarProps) {
+export function TaskToolbar({
+  onCreateTask,
+  onOpenDataManager,
+  onOpenReportExport,
+}: TaskToolbarProps) {
   const { filters, updateFilters, getFilteredTasks } = useTaskContext();
   const taskCount = getFilteredTasks().length;
 
@@ -26,16 +33,45 @@ export function TaskToolbar({ onCreateTask }: TaskToolbarProps) {
     });
   };
 
+  const handleSearchChange = (value: string) => {
+    updateFilters({ searchQuery: value });
+  };
+
+  const clearSearch = () => {
+    updateFilters({ searchQuery: '' });
+  };
+
   const currentSort = `${filters.sortBy}-${filters.sortOrder}`;
 
   return (
     <div className="border-b bg-background p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold">任务列表</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            共 {taskCount} 个任务
-          </p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4 flex-1">
+          <div>
+            <h2 className="text-xl font-semibold">任务列表</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              共 {taskCount} 个任务
+            </p>
+          </div>
+
+          {/* 搜索框 */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="搜索任务标题或描述..."
+              value={filters.searchQuery}
+              onChange={e => handleSearchChange(e.target.value)}
+              className="pl-9 pr-9"
+            />
+            {filters.searchQuery && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -51,6 +87,7 @@ export function TaskToolbar({ onCreateTask }: TaskToolbarProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">全部优先级</SelectItem>
+              <SelectItem value="urgent">紧急</SelectItem>
               <SelectItem value="high">高优先级</SelectItem>
               <SelectItem value="medium">中优先级</SelectItem>
               <SelectItem value="low">低优先级</SelectItem>
@@ -80,6 +117,22 @@ export function TaskToolbar({ onCreateTask }: TaskToolbarProps) {
             <Plus className="w-4 h-4 mr-2" />
             创建任务
           </Button>
+
+          {/* 数据管理 */}
+          {onOpenDataManager && (
+            <Button variant="outline" onClick={onOpenDataManager}>
+              <Database className="w-4 h-4 mr-2" />
+              数据管理
+            </Button>
+          )}
+
+          {/* 报告导出 */}
+          {onOpenReportExport && (
+            <Button variant="outline" onClick={onOpenReportExport}>
+              <FileText className="w-4 h-4 mr-2" />
+              导出报告
+            </Button>
+          )}
         </div>
       </div>
     </div>
