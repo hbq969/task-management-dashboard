@@ -31,11 +31,13 @@ export function ProjectDialog({ open, onClose }: ProjectDialogProps) {
   const { addProject } = useTaskContext();
   const [name, setName] = useState('');
   const [selectedColor, setSelectedColor] = useState(projectColors[0]);
+  const [order, setOrder] = useState(0);
 
   useEffect(() => {
     if (open) {
       setName('');
       setSelectedColor(projectColors[0]);
+      setOrder(0);
     }
   }, [open]);
 
@@ -46,6 +48,7 @@ export function ProjectDialog({ open, onClose }: ProjectDialogProps) {
     addProject({
       name: name.trim(),
       color: selectedColor,
+      order,
     });
 
     onClose();
@@ -86,6 +89,19 @@ export function ProjectDialog({ open, onClose }: ProjectDialogProps) {
                 />
               ))}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="project-order">排序顺序</Label>
+            <Input
+              id="project-order"
+              type="number"
+              placeholder="数字越小越靠前，默认为 0"
+              value={order}
+              onChange={e => setOrder(parseInt(e.target.value) || 0)}
+              min={0}
+            />
+            <p className="text-xs text-muted-foreground">导出报告时按此字段从小到大排序</p>
           </div>
 
           <div className="flex gap-3 pt-4">

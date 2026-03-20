@@ -54,7 +54,7 @@ interface TaskListProps {
 }
 
 export function TaskList({ onEditTask }: TaskListProps) {
-  const { getFilteredTasks, updateTask, deleteTask, projects, people, currentPage, pageSize, setCurrentPage, setPageSize } = useTaskContext();
+  const { getFilteredTasks, updateTask, deleteTask, projects, people, currentPage, pageSize, setCurrentPage, setPageSize, selectedTaskIds, toggleTaskSelection, selectAllTasks, clearSelection } = useTaskContext();
   const tasks = getFilteredTasks();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
@@ -153,10 +153,17 @@ export function TaskList({ onEditTask }: TaskListProps) {
                 <Card
                   className={`transition-all hover:shadow-sm ${
                     task.status === 'completed' ? 'opacity-60' : ''
-                  }`}
+                  } ${selectedTaskIds.includes(task.id) ? 'ring-2 ring-primary' : ''}`}
                 >
                   <CardContent className="py-2.5 px-3">
                     <div className="flex items-start gap-2.5">
+                      {/* 批量选择 checkbox */}
+                      <Checkbox
+                        checked={selectedTaskIds.includes(task.id)}
+                        onCheckedChange={() => toggleTaskSelection(task.id)}
+                        className="mt-0.5"
+                      />
+                      {/* 状态切换 checkbox */}
                       <Checkbox
                         checked={task.status === 'completed'}
                         onCheckedChange={() => handleStatusToggle(task)}

@@ -34,6 +34,7 @@ export interface Project {
   name: string;
   color: string;
   taskCount: number;
+  order: number; // 排序字段，数字越小越靠前
 }
 
 export type TimeRangeFilter =

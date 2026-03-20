@@ -8,8 +8,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
-import { Plus, ArrowUpDown, Search, X, Database, FileText } from 'lucide-react';
+import { Plus, ArrowUpDown, Search, X, Database, FileText, Tag } from 'lucide-react';
 import type { Priority } from '../types/task';
+import { useState, useRef, useEffect } from 'react';
 
 interface TaskToolbarProps {
   onCreateTask: () => void;
@@ -22,8 +23,29 @@ export function TaskToolbar({
   onOpenDataManager,
   onOpenReportExport,
 }: TaskToolbarProps) {
-  const { filters, updateFilters, getFilteredTasks } = useTaskContext();
+  const { filters, updateFilters, getFilteredTasks, selectedTaskIds, allTags, batchAddTags } = useTaskContext();
   const taskCount = getFilteredTasks().length;
+  const [showTagInput, setShowTagInput] = useState(false);
+  const [newTag, setNewTag] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const tagInputRef = useRef<HTMLDivElement>(null);
+
+  // 点击外部关闭标签输入
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tagInputRef.current && !tagInputRef.current.contains(event.target as Node)) {
+        setShowTagInput(false);
+        setSelectedTags([]);
+        setNewTag('');
+      }
+    };
+    if (showTagInput) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showTagInput]);
 
   const handleSortChange = (value: string) => {
     const [sortBy, sortOrder] = value.split('-');
@@ -39,6 +61,25 @@ export function TaskToolbar({
 
   const clearSearch = () => {
     updateFilters({ searchQuery: '' });
+  };
+
+  const handleToggleTag = (tag: string) => {
+    setSelectedTags(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const handleConfirmTags = () => {
+    const tagsToAdd = [...selectedTags];
+    if (newTag.trim()) {
+      tagsToAdd.push(newTag.trim());
+    }
+    if (tagsToAdd.length > 0) {
+      batchAddTags(tagsToAdd);
+    }
+    setShowTagInput(false);
+    setSelectedTags([]);
+    setNewTag('');
   };
 
   const currentSort = `${filters.sortBy}-${filters.sortOrder}`;
@@ -75,6 +116,71 @@ export function TaskToolbar({
         </div>
 
         <div className="flex items-center gap-3">
+          {/* 批量操作 */}
+          {selectedTaskIds.length > 0 && (
+            <div className="relative" ref={tagInputRef}>
+              <Button
+                variant="outline"
+                onClick={() => setShowTagInput(!showTagInput)}
+              >
+                <Tag className="w-4 h-4 mr-2" />
+                打标签 ({selectedTaskIds.length})
+              </Button>
+              {showTagInput && (
+                <div className="absolute top-full mt-2 right-0 w-64 bg-background border rounded-lg shadow-lg p-3 z-50">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">选择标签</p>
+                    {allTags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {allTags.map(tag => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => handleToggleTag(tag)}
+                            className={`px-2 py-1 text-xs rounded-md border transition-colors ${
+                              selectedTags.includes(tag)
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-background hover:bg-muted'
+                            }`}
+                          >
+                            {tag}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <Input
+                      placeholder="输入新标签..."
+                      value={newTag}
+                      onChange={e => setNewTag(e.target.value)}
+                      className="h-8"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleConfirmTags}
+                        className="flex-1"
+                        disabled={selectedTags.length === 0 && !newTag.trim()}
+                      >
+                        确认
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setShowTagInput(false);
+                          setSelectedTags([]);
+                          setNewTag('');
+                        }}
+                      >
+                        取消
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* 优先级筛选 */}
           <Select
             value={filters.priority}

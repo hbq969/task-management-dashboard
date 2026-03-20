@@ -37,13 +37,17 @@ interface TaskContextType {
   batchUpdateStatus: (status: Task['status']) => void;
   batchDelete: () => void;
   batchMoveProject: (projectId: string) => void;
+  batchAddTags: (tags: string[]) => void;
+  // Project operations
+  updateProject: (id: string, updates: Partial<Omit<Project, 'id' | 'taskCount'>>) => void;
   // Data management
   exportData: () => string;
   importData: (data: string) => { success: boolean; message: string };
   // Report generation
   generateReport: (
     type: 'weekly' | 'monthly' | 'quarterly',
-    startDate?: Date
+    startDate?: Date,
+    filterTags?: string[]
   ) => string;
   // Pagination
   setCurrentPage: (page: number) => void;
@@ -53,9 +57,9 @@ interface TaskContextType {
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
 const defaultProjects: Project[] = [
-  { id: '1', name: '工作项目', color: '#3b82f6', taskCount: 0 },
-  { id: '2', name: '个人事务', color: '#8b5cf6', taskCount: 0 },
-  { id: '3', name: '学习计划', color: '#10b981', taskCount: 0 },
+  { id: '1', name: '工作项目', color: '#3b82f6', taskCount: 0, order: 0 },
+  { id: '2', name: '个人事务', color: '#8b5cf6', taskCount: 0, order: 1 },
+  { id: '3', name: '学习计划', color: '#10b981', taskCount: 0, order: 2 },
 ];
 
 const defaultPeople: Person[] = [
@@ -251,8 +255,17 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       ...projectData,
       id: Date.now().toString(),
       taskCount: 0,
+      order: projectData.order ?? 0,
     };
     setProjects(prev => [...prev, newProject]);
+  }, []);
+
+  const updateProject = useCallback((id: string, updates: Partial<Omit<Project, 'id' | 'taskCount'>>) => {
+    setProjects(prev =>
+      prev.map(project =>
+        project.id === id ? { ...project, ...updates } : project
+      )
+    );
   }, []);
 
   const deleteProject = useCallback((id: string) => {
@@ -428,6 +441,24 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     [selectedTaskIds, clearSelection]
   );
 
+  const batchAddTags = useCallback(
+    (tags: string[]) => {
+      setTasks(prev =>
+        prev.map(task =>
+          selectedTaskIds.includes(task.id)
+            ? {
+                ...task,
+                tags: [...new Set([...task.tags, ...tags])],
+                updatedAt: new Date().toISOString(),
+              }
+            : task
+        )
+      );
+      clearSelection();
+    },
+    [selectedTaskIds, clearSelection]
+  );
+
   // Data import/export
   const exportData = useCallback(() => {
     const data = {
@@ -472,7 +503,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   // Report generation
   const generateReport = useCallback(
-    (type: 'weekly' | 'monthly' | 'quarterly', startDate?: Date): string => {
+    (type: 'weekly' | 'monthly' | 'quarterly', startDate?: Date, filterTags?: string[]): string => {
       const now = startDate || new Date();
       let reportStartDate: Date;
       let reportEndDate: Date;
@@ -504,21 +535,34 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       };
 
       // Filter tasks by date range
-      const reportTasks = tasks.filter(task => {
+      let reportTasks = tasks.filter(task => {
         const taskDate = new Date(task.createdAt);
         return taskDate >= reportStartDate && taskDate <= reportEndDate;
       });
 
-      // Group by project
-      const projectGroups = new Map<string, Task[]>();
+      // Filter by tags if specified
+      if (filterTags && filterTags.length > 0) {
+        reportTasks = reportTasks.filter(task =>
+          filterTags.some(tag => task.tags.includes(tag))
+        );
+      }
+
+      // Group by project and sort by project order
+      const projectGroups = new Map<string, { tasks: Task[]; order: number }>();
       reportTasks.forEach(task => {
         const project = projects.find(p => p.id === task.projectId);
         const projectName = project?.name || '未分类';
+        const projectOrder = project?.order ?? 0;
         if (!projectGroups.has(projectName)) {
-          projectGroups.set(projectName, []);
+          projectGroups.set(projectName, { tasks: [], order: projectOrder });
         }
-        projectGroups.get(projectName)!.push(task);
+        projectGroups.get(projectName)!.tasks.push(task);
       });
+
+      // Sort project groups by order
+      const sortedProjectGroups = [...projectGroups.entries()].sort(
+        (a, b) => a[1].order - b[1].order
+      );
 
       // Build report
       let report = `# ${typeLabels[type]}\n\n`;
@@ -540,7 +584,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
       const statusOrder = { completed: 0, 'in-progress': 1, todo: 2 };
 
-      projectGroups.forEach((projectTasks, projectName) => {
+      sortedProjectGroups.forEach(([projectName, { tasks: projectTasks }]) => {
         report += `## ${projectName}\n\n`;
 
         // 按状态排序：已完成 -> 进行中 -> 待办
@@ -601,6 +645,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         deleteTask,
         addProject,
         deleteProject,
+        updateProject,
         updateFilters,
         getFilteredTasks,
         allTags,
@@ -613,6 +658,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         batchUpdateStatus,
         batchDelete,
         batchMoveProject,
+        batchAddTags,
         exportData,
         importData,
         generateReport,

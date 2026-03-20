@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useTaskContext } from '../context/TaskContext';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
+import { Input } from './ui/input';
 import {
   Dialog,
   DialogContent,
@@ -18,7 +19,7 @@ import {
 } from './ui/select';
 import { Separator } from './ui/separator';
 import { ScrollArea } from './ui/scroll-area';
-import { FileText, Copy, Check } from 'lucide-react';
+import { FileText, Copy, Check, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 interface ReportExportProps {
@@ -100,15 +101,28 @@ const markdownToPlainText = (md: string): string => {
 };
 
 export function ReportExport({ open, onClose }: ReportExportProps) {
-  const { generateReport } = useTaskContext();
+  const { generateReport, allTags } = useTaskContext();
   const [reportType, setReportType] = useState<'weekly' | 'monthly' | 'quarterly'>('weekly');
   const [report, setReport] = useState('');
   const [copied, setCopied] = useState(false);
   const [format, setFormat] = useState<ExportFormat>('markdown');
+  const [filterTags, setFilterTags] = useState<string[]>([]);
+  const [customTag, setCustomTag] = useState('');
 
   const handleGenerateReport = () => {
-    const generatedReport = generateReport(reportType);
+    const tags = customTag.trim() ? [...filterTags, customTag.trim()] : filterTags;
+    const generatedReport = generateReport(reportType, undefined, tags.length > 0 ? tags : undefined);
     setReport(generatedReport);
+  };
+
+  const handleToggleTag = (tag: string) => {
+    setFilterTags(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const handleRemoveTag = (tag: string) => {
+    setFilterTags(prev => prev.filter(t => t !== tag));
   };
 
   const displayContent = useMemo(() => {
@@ -180,6 +194,58 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
               </Select>
             </div>
             <Button onClick={handleGenerateReport}>生成报告</Button>
+          </div>
+
+          {/* 标签筛选 */}
+          <div className="space-y-2">
+            <Label>标签筛选（可选）</Label>
+            <div className="flex flex-wrap gap-1">
+              {allTags.map(tag => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => handleToggleTag(tag)}
+                  className={`px-2 py-1 text-xs rounded-md border transition-colors ${
+                    filterTags.includes(tag)
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-background hover:bg-muted'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+            {filterTags.length > 0 && (
+              <div className="flex items-center gap-1 mt-2">
+                <span className="text-xs text-muted-foreground">已选择：</span>
+                {filterTags.map(tag => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-primary/10 text-primary rounded"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tag)}
+                      className="hover:text-primary/80"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2 items-center">
+              <Input
+                placeholder="输入自定义标签..."
+                value={customTag}
+                onChange={e => setCustomTag(e.target.value)}
+                className="h-8 w-48"
+              />
+              {customTag && (
+                <span className="text-xs text-muted-foreground">将添加自定义标签：{customTag}</span>
+              )}
+            </div>
           </div>
 
           <Separator />
