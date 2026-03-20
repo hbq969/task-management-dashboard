@@ -75,7 +75,8 @@ export function TaskList({ onEditTask }: TaskListProps) {
 
   const handleStatusToggle = (task: Task) => {
     const newStatus = task.status === 'completed' ? 'todo' : 'completed';
-    updateTask(task.id, { status: newStatus });
+    const newProgress = newStatus === 'completed' ? 100 : 0;
+    updateTask(task.id, { status: newStatus, progress: newProgress });
   };
 
   const handleDeleteClick = (task: Task) => {
