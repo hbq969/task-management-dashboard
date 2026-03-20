@@ -538,10 +538,17 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         low: '低',
       };
 
+      const statusOrder = { completed: 0, 'in-progress': 1, todo: 2 };
+
       projectGroups.forEach((projectTasks, projectName) => {
         report += `## ${projectName}\n\n`;
 
-        projectTasks.forEach(task => {
+        // 按状态排序：已完成 -> 进行中 -> 待办
+        const sortedTasks = [...projectTasks].sort(
+          (a, b) => statusOrder[a.status] - statusOrder[b.status]
+        );
+
+        sortedTasks.forEach(task => {
           const assignee = task.assigneeId
             ? people.find(p => p.id === task.assigneeId)?.name
             : undefined;
@@ -554,7 +561,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           if (task.progress > 0) {
             report += `- 进度：${task.progress}%\n`;
           }
-          if (task.dueDate) {
+          // 只有进行中和待办状态才显示截止时间
+          if (task.dueDate && (task.status === 'in-progress' || task.status === 'todo')) {
             report += `- 截止日期：${formatDate(new Date(task.dueDate))}\n`;
           }
           if (task.priority !== 'medium') {
