@@ -107,11 +107,10 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
   const [copied, setCopied] = useState(false);
   const [format, setFormat] = useState<ExportFormat>('markdown');
   const [filterTags, setFilterTags] = useState<string[]>([]);
-  const [customTag, setCustomTag] = useState('');
 
   const handleGenerateReport = () => {
-    const tags = customTag.trim() ? [...filterTags, customTag.trim()] : filterTags;
-    const generatedReport = generateReport(reportType, undefined, tags.length > 0 ? tags : undefined);
+    const tags = filterTags.length > 0 ? filterTags : undefined;
+    const generatedReport = generateReport(reportType, undefined, tags);
     setReport(generatedReport);
   };
 
@@ -235,17 +234,6 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
                 ))}
               </div>
             )}
-            <div className="flex gap-2 items-center">
-              <Input
-                placeholder="输入自定义标签..."
-                value={customTag}
-                onChange={e => setCustomTag(e.target.value)}
-                className="h-8 w-48"
-              />
-              {customTag && (
-                <span className="text-xs text-muted-foreground">将添加自定义标签：{customTag}</span>
-              )}
-            </div>
           </div>
 
           <Separator />

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTaskContext } from '../context/TaskContext';
 import { Button } from './ui/button';
@@ -67,7 +67,7 @@ export function TaskList({ onEditTask }: TaskListProps) {
   );
 
   // Reset to page 1 if current page exceeds total
-  useMemo(() => {
+  useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(1);
     }
@@ -124,7 +124,37 @@ export function TaskList({ onEditTask }: TaskListProps) {
   }
 
   return (
-    <TooltipProvider>
+    <>
+      {/* 全选工具栏 */}
+      {tasks.length > 0 && (
+        <div className="flex items-center justify-between mb-3 p-2 bg-secondary/10 rounded-md border">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="select-all"
+              checked={selectedTaskIds.length > 0 && selectedTaskIds.length === tasks.length}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  selectAllTasks();
+                } else {
+                  clearSelection();
+                }
+              }}
+            />
+            <label
+              htmlFor="select-all"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+            >
+              全选 {selectedTaskIds.length > 0 && `(${selectedTaskIds.length} 个已选择)`}
+            </label>
+          </div>
+          {selectedTaskIds.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={clearSelection}>
+              取消选择
+            </Button>
+          )}
+        </div>
+      )}
+      <TooltipProvider>
       <motion.div
         className="space-y-2"
         variants={containerVariants}
@@ -393,5 +423,6 @@ export function TaskList({ onEditTask }: TaskListProps) {
         </AlertDialogContent>
       </AlertDialog>
     </TooltipProvider>
+    </>
   );
 }

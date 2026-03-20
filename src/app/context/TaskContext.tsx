@@ -38,6 +38,8 @@ interface TaskContextType {
   batchDelete: () => void;
   batchMoveProject: (projectId: string) => void;
   batchAddTags: (tags: string[]) => void;
+  batchToggleTag: (tag: string) => void;
+  getSelectedTasksTagStatus: (tag: string) => 'all' | 'some' | 'none';
   // Project operations
   updateProject: (id: string, updates: Partial<Omit<Project, 'id' | 'taskCount'>>) => void;
   // Data management
@@ -459,6 +461,41 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     [selectedTaskIds, clearSelection]
   );
 
+  // 获取选中任务的标签状态：'all'=全部都有, 'some'=部分有, 'none'=都没有
+  const getSelectedTasksTagStatus = useCallback(
+    (tag: string): 'all' | 'some' | 'none' => {
+      if (selectedTaskIds.length === 0) return 'none';
+      const selectedTasks = tasks.filter(task => selectedTaskIds.includes(task.id));
+      const tasksWithTag = selectedTasks.filter(task => task.tags.includes(tag));
+      if (tasksWithTag.length === selectedTasks.length) return 'all';
+      if (tasksWithTag.length === 0) return 'none';
+      return 'some';
+    },
+    [tasks, selectedTaskIds]
+  );
+
+  // 切换标签：如果所有选中任务都有该标签则移除，否则添加
+  const batchToggleTag = useCallback(
+    (tag: string) => {
+      const status = getSelectedTasksTagStatus(tag);
+      setTasks(prev =>
+        prev.map(task =>
+          selectedTaskIds.includes(task.id)
+            ? {
+                ...task,
+                tags: status === 'all'
+                  ? task.tags.filter(t => t !== tag)
+                  : [...new Set([...task.tags, tag])],
+                updatedAt: new Date().toISOString(),
+              }
+            : task
+        )
+      );
+      // 不清除选择，允许继续操作
+    },
+    [selectedTaskIds, getSelectedTasksTagStatus]
+  );
+
   // Data import/export
   const exportData = useCallback(() => {
     const data = {
@@ -659,6 +696,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         batchDelete,
         batchMoveProject,
         batchAddTags,
+        batchToggleTag,
+        getSelectedTasksTagStatus,
         exportData,
         importData,
         generateReport,
