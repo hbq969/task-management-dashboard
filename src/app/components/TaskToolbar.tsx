@@ -8,6 +8,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './ui/alert-dialog';
 import { Plus, ArrowUpDown, Search, X, Database, FileText, Tag } from 'lucide-react';
 import type { Priority } from '../types/task';
 import { useState, useRef, useEffect } from 'react';
@@ -26,6 +36,8 @@ export function TaskToolbar({
   const { filters, updateFilters, getFilteredTasks, selectedTaskIds, allTags, batchToggleTag, getSelectedTasksTagStatus } = useTaskContext();
   const taskCount = getFilteredTasks().length;
   const [showTagInput, setShowTagInput] = useState(false);
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
+  const [tagToRemove, setTagToRemove] = useState<string | null>(null);
   const tagInputRef = useRef<HTMLDivElement>(null);
 
   // 点击外部关闭标签输入
@@ -61,13 +73,45 @@ export function TaskToolbar({
 
   // 点击标签即时切换
   const handleTagClick = (tag: string) => {
-    batchToggleTag(tag);
+    const status = getSelectedTasksTagStatus(tag);
+    if (status === 'all') {
+      // 所有选中任务都有该标签，需要确认后移除
+      setTagToRemove(tag);
+      setRemoveConfirmOpen(true);
+    } else {
+      // 部分有或都没有，直接添加
+      batchToggleTag(tag);
+    }
   };
 
   const currentSort = `${filters.sortBy}-${filters.sortOrder}`;
 
   return (
     <div className="border-b bg-background p-4">
+      {/* 移除标签确认对话框 */}
+      <AlertDialog open={removeConfirmOpen} onOpenChange={setRemoveConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认移除标签？</AlertDialogTitle>
+            <AlertDialogDescription>
+              此操作将从所有选中的 {selectedTaskIds.length} 个任务中移除标签 "{tagToRemove}"。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (tagToRemove) {
+                batchToggleTag(tagToRemove);
+              }
+              setRemoveConfirmOpen(false);
+              setTagToRemove(null);
+            }}>
+              确认移除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4 flex-1">
           <div>
