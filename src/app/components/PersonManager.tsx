@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useTaskContext } from '../context/TaskContext';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -31,8 +31,11 @@ import {
   Mail,
   Users,
   Search,
+  Download,
+  Upload,
 } from 'lucide-react';
 import type { Person } from '../types/task';
+import { generatePersonTemplate, parsePersonExcel } from '../utils/excel';
 
 interface PersonManagerProps {
   open: boolean;
@@ -46,6 +49,8 @@ export function PersonManager({ open, onClose }: PersonManagerProps) {
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
   const [deletingPerson, setDeletingPerson] = useState<Person | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -66,6 +71,37 @@ export function PersonManager({ open, onClose }: PersonManagerProps) {
       email: '',
     });
     setEditingPerson(null);
+  };
+
+  // 模板下载
+  const handleDownloadTemplate = () => {
+    const blob = generatePersonTemplate();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '人员导入模板.xlsx';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Excel 导入
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      const people = await parsePersonExcel(file);
+      const validPeople = people.filter(p => p.name);
+      validPeople.forEach(p => addPerson(p));
+    } catch (error) {
+      console.error('导入失败:', error);
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   const handleOpenEditDialog = (person?: Person) => {
@@ -171,6 +207,25 @@ export function PersonManager({ open, onClose }: PersonManagerProps) {
             <Button onClick={() => handleOpenEditDialog()}>
               <Plus className="w-4 h-4 mr-2" />
               添加人员
+            </Button>
+            <Button variant="outline" onClick={handleDownloadTemplate}>
+              <Download className="w-4 h-4 mr-2" />
+              下载模板
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleImport}
+              className="hidden"
+            />
+            <Button
+              variant="outline"
+              disabled={importing}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              {importing ? '导入中...' : 'Excel导入'}
             </Button>
           </div>
 
