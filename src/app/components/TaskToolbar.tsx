@@ -43,6 +43,8 @@ export function TaskToolbar({
   // 点击外部关闭标签输入
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // 确认对话框打开时不关闭面板
+      if (removeConfirmOpen) return;
       if (tagInputRef.current && !tagInputRef.current.contains(event.target as Node)) {
         setShowTagInput(false);
       }
@@ -53,7 +55,7 @@ export function TaskToolbar({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showTagInput]);
+  }, [showTagInput, removeConfirmOpen]);
 
   const handleSortChange = (value: string) => {
     const [sortBy, sortOrder] = value.split('-');
