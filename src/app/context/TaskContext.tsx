@@ -42,6 +42,9 @@ interface TaskContextType {
   getSelectedTasksTagStatus: (tag: string) => 'all' | 'some' | 'none';
   // Project operations
   updateProject: (id: string, updates: Partial<Omit<Project, 'id' | 'taskCount'>>) => void;
+  // Tag management
+  addPredefinedTag: (tag: string) => void;
+  deleteTag: (tag: string) => void;
   // Data management
   exportData: () => string;
   importData: (data: string) => { success: boolean; message: string };
@@ -144,6 +147,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
+  const [predefinedTags, setPredefinedTags] = useState<string[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const [filters, setFilters] = useState<FilterOptions>({
@@ -182,6 +186,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         setTasks(migratedTasks);
         setProjects(data.projects);
         setPeople(data.people);
+        setPredefinedTags(data.predefinedTags ?? []);
       } else {
         // 首次启动：加载示例数据
         const sampleTasks = getSampleTasks();
@@ -211,9 +216,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   // 统一数据持久化
   useEffect(() => {
     if (isLoaded) {
-      writeData({ tasks, projects, people });
+      writeData({ tasks, projects, people, predefinedTags });
     }
-  }, [tasks, projects, people, isLoaded]);
+  }, [tasks, projects, people, predefinedTags, isLoaded]);
 
   // Update project task counts when tasks change
   useEffect(() => {
@@ -496,6 +501,27 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     [selectedTaskIds, getSelectedTasksTagStatus]
   );
 
+  // Tag management
+  const addPredefinedTag = useCallback((tag: string) => {
+    setPredefinedTags(prev => {
+      if (prev.includes(tag)) return prev;
+      return [...prev, tag];
+    });
+  }, []);
+
+  const deleteTag = useCallback((tag: string) => {
+    // 从任务中移除
+    setTasks(prev =>
+      prev.map(task => ({
+        ...task,
+        tags: task.tags.filter(t => t !== tag),
+        updatedAt: new Date().toISOString(),
+      }))
+    );
+    // 从预定义中移除
+    setPredefinedTags(prev => prev.filter(t => t !== tag));
+  }, []);
+
   // Data import/export
   const exportData = useCallback(() => {
     const data = {
@@ -661,10 +687,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     [tasks, projects, people]
   );
 
-  const allTags = useMemo(() =>
-    Array.from(new Set(tasks.flatMap(task => task.tags))).sort(),
-    [tasks]
-  );
+  const allTags = useMemo(() => {
+    const taskTags = tasks.flatMap(task => task.tags);
+    return Array.from(new Set([...predefinedTags, ...taskTags])).sort();
+  }, [tasks, predefinedTags]);
 
   return (
     <TaskContext.Provider
@@ -698,6 +724,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         batchAddTags,
         batchToggleTag,
         getSelectedTasksTagStatus,
+        addPredefinedTag,
+        deleteTag,
         exportData,
         importData,
         generateReport,

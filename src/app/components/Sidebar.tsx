@@ -41,6 +41,7 @@ import {
   Calendar as CalendarIcon,
   MoreVertical,
   Trash2,
+  X,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -53,9 +54,13 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) {
-  const { tasks, projects, filters, updateFilters, allTags, people, deleteProject } = useTaskContext();
+  const { tasks, projects, filters, updateFilters, allTags, people, deleteProject, addPredefinedTag, deleteTag } = useTaskContext();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [addTagDialogOpen, setAddTagDialogOpen] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
+  const [deleteTagDialogOpen, setDeleteTagDialogOpen] = useState(false);
+  const [tagToDelete, setTagToDelete] = useState<string | null>(null);
 
   const statusCounts = useMemo(() => ({
     all: tasks.length,
@@ -89,6 +94,37 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
       deleteProject(projectToDelete.id);
       setDeleteDialogOpen(false);
       setProjectToDelete(null);
+    }
+  };
+
+  const handleAddTag = () => {
+    setNewTagName('');
+    setAddTagDialogOpen(true);
+  };
+
+  const handleAddTagConfirm = () => {
+    const trimmedName = newTagName.trim();
+    if (trimmedName && !allTags.includes(trimmedName)) {
+      addPredefinedTag(trimmedName);
+    }
+    setAddTagDialogOpen(false);
+    setNewTagName('');
+  };
+
+  const handleDeleteTagClick = (tag: string) => {
+    setTagToDelete(tag);
+    setDeleteTagDialogOpen(true);
+  };
+
+  const handleDeleteTagConfirm = () => {
+    if (tagToDelete) {
+      deleteTag(tagToDelete);
+      // 如果当前筛选包含被删除的标签，清除该筛选
+      if (filters.tags.includes(tagToDelete)) {
+        updateFilters({ tags: filters.tags.filter(t => t !== tagToDelete) });
+      }
+      setDeleteTagDialogOpen(false);
+      setTagToDelete(null);
     }
   };
 
@@ -229,28 +265,50 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
             </div>
           </div>
 
-          {/* 标签筛选 */}
-          {allTags.length > 0 && (
-            <>
-              <Separator />
-              <div>
-                <h2 className="text-sm font-medium mb-2 text-muted-foreground">标签</h2>
-                <div className="flex flex-wrap gap-2">
-                  {allTags.map(tag => (
+          {/* 标签管理 */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-medium text-muted-foreground">标签</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={handleAddTag}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            {allTags.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {allTags.map(tag => (
+                  <div
+                    key={tag}
+                    className="flex items-center group"
+                  >
                     <Badge
-                      key={tag}
                       variant={filters.tags.includes(tag) ? 'default' : 'outline'}
-                      className="cursor-pointer hover:bg-primary/80"
+                      className="cursor-pointer hover:bg-primary/80 pr-1"
                       onClick={() => handleTagFilter(tag)}
                     >
                       <Tag className="w-3 h-3 mr-1" />
                       {tag}
                     </Badge>
-                  ))}
-                </div>
+                    <button
+                      className="ml-0.5 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTagClick(tag);
+                      }}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
               </div>
-            </>
-          )}
+            ) : (
+              <p className="text-xs text-muted-foreground">暂无标签，点击 + 添加</p>
+            )}
+          </div>
 
           <Separator />
 
@@ -364,6 +422,52 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirm}>删除</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 新增标签对话框 */}
+      <AlertDialog open={addTagDialogOpen} onOpenChange={setAddTagDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>添加新标签</AlertDialogTitle>
+            <AlertDialogDescription>
+              <input
+                type="text"
+                className="w-full mt-2 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="输入标签名称"
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleAddTagConfirm();
+                  }
+                }}
+                autoFocus
+              />
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setNewTagName('')}>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleAddTagConfirm} disabled={!newTagName.trim() || allTags.includes(newTagName.trim())}>
+              添加
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 删除标签确认对话框 */}
+      <AlertDialog open={deleteTagDialogOpen} onOpenChange={setDeleteTagDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除标签？</AlertDialogTitle>
+            <AlertDialogDescription>
+              此操作将从所有任务中移除标签 "{tagToDelete}"。此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteTagConfirm}>删除</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
