@@ -234,7 +234,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const addTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newTask: Task = {
       ...taskData,
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -260,7 +260,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const addProject = useCallback((projectData: Omit<Project, 'id' | 'taskCount'>) => {
     const newProject: Project = {
       ...projectData,
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       taskCount: 0,
       order: projectData.order ?? 0,
     };
@@ -374,7 +374,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const addPerson = useCallback((personData: Omit<Person, 'id' | 'createdAt'>) => {
     const newPerson: Person = {
       ...personData,
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       createdAt: new Date().toISOString(),
     };
     setPeople(prev => [...prev, newPerson]);
