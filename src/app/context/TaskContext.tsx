@@ -40,6 +40,7 @@ interface TaskContextType {
   batchAddTags: (tags: string[]) => void;
   batchToggleTag: (tag: string) => void;
   getSelectedTasksTagStatus: (tag: string) => 'all' | 'some' | 'none';
+  removeTagFromSelectedTasks: (tag: string) => void;
   // Project operations
   updateProject: (id: string, updates: Partial<Omit<Project, 'id' | 'taskCount'>>) => void;
   // Tag management
@@ -501,6 +502,24 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     [selectedTaskIds, getSelectedTasksTagStatus]
   );
 
+  // 直接从选中任务中移除标签（不检查状态，用于确认对话框）
+  const removeTagFromSelectedTasks = useCallback(
+    (tag: string) => {
+      setTasks(prev =>
+        prev.map(task =>
+          selectedTaskIds.includes(task.id)
+            ? {
+                ...task,
+                tags: task.tags.filter(t => t !== tag),
+                updatedAt: new Date().toISOString(),
+              }
+            : task
+        )
+      );
+    },
+    [selectedTaskIds]
+  );
+
   // Tag management
   const addPredefinedTag = useCallback((tag: string) => {
     setPredefinedTags(prev => {
@@ -724,6 +743,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         batchAddTags,
         batchToggleTag,
         getSelectedTasksTagStatus,
+        removeTagFromSelectedTasks,
         addPredefinedTag,
         deleteTag,
         exportData,

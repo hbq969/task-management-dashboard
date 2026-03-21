@@ -148,7 +148,7 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-[700px] max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
@@ -157,7 +157,8 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
           <DialogDescription>生成任务报告并导出</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 mt-4">
+        {/* 表单区域 - 固定高度 */}
+        <div className="space-y-4 mt-4 flex-shrink-0">
           <div className="flex items-end gap-4">
             <div className="flex-1 space-y-2">
               <Label>报告类型</Label>
@@ -235,62 +236,66 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
               </div>
             )}
           </div>
-
-          <Separator />
-
-          {report && (
-            <div className="space-y-3 flex-1 min-h-0">
-              <div className="flex items-center justify-between">
-                <Label>{reportTypeLabels[reportType]} ({formatLabels[format]})</Label>
-              </div>
-
-              {/* Preview Area */}
-              <ScrollArea className="h-[350px] border rounded-md bg-muted/30">
-                <div className="p-4">
-                  {format === 'markdown' ? (
-                    <div className="prose prose-sm max-w-none dark:prose-invert
-                      prose-headings:mt-6 prose-headings:mb-3
-                      prose-h1:text-xl prose-h1:font-bold prose-h1:border-b prose-h1:pb-2
-                      prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-8 prose-h2:pt-2
-                      prose-h3:text-base prose-h3:font-medium prose-h3:mt-4
-                      prose-p:my-2 prose-li:my-1
-                      prose-ul:list-disc prose-ul:pl-4
-                      prose-strong:text-foreground">
-                      <ReactMarkdown>{report}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <pre className="font-mono text-sm whitespace-pre-wrap break-words">
-                      {displayContent}
-                    </pre>
-                  )}
-                </div>
-              </ScrollArea>
-
-              <div className="flex gap-2">
-                <Button onClick={handleCopy} variant="outline" className="flex-1">
-                  {copied ? (
-                    <>
-                      <Check className="w-4 h-4 mr-2" />
-                      已复制
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4 mr-2" />
-                      复制到剪贴板
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {!report && (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <FileText className="w-12 h-12 mb-4 opacity-20" />
-              <p>选择报告类型并点击"生成报告"</p>
-            </div>
-          )}
         </div>
+
+        <Separator className="flex-shrink-0" />
+
+        {/* 报告区域 - 自适应高度 */}
+        {report && (
+          <div className="flex flex-col min-h-0 flex-1">
+            <div className="flex items-center justify-between mb-2">
+              <Label>{reportTypeLabels[reportType]} ({formatLabels[format]})</Label>
+            </div>
+
+            {/* Preview Area - 自适应高度 */}
+            <ScrollArea className="flex-1 border rounded-md bg-muted/30">
+              <div className="p-4">
+                {format === 'markdown' ? (
+                  <div className="prose prose-sm max-w-none dark:prose-invert
+                    prose-headings:mt-6 prose-headings:mb-3
+                    prose-h1:text-xl prose-h1:font-bold prose-h1:border-b prose-h1:pb-2
+                    prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-8 prose-h2:pt-2
+                    prose-h3:text-base prose-h3:font-medium prose-h3:mt-4
+                    prose-p:my-2 prose-li:my-1
+                    prose-ul:list-disc prose-ul:pl-4
+                    prose-strong:text-foreground">
+                    <ReactMarkdown>{report}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <pre className="font-mono text-sm whitespace-pre-wrap break-words">
+                    {displayContent}
+                  </pre>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        )}
+
+        {!report && (
+          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground flex-1">
+            <FileText className="w-12 h-12 mb-4 opacity-20" />
+            <p>选择报告类型并点击"生成报告"</p>
+          </div>
+        )}
+
+        {/* 复制按钮 - 固定在底部 */}
+        {report && (
+          <div className="flex gap-2 pt-4 border-t flex-shrink-0">
+            <Button onClick={handleCopy} variant="outline" className="flex-1">
+              {copied ? (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  已复制
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 mr-2" />
+                  复制到剪贴板
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

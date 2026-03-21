@@ -33,7 +33,7 @@ export function TaskToolbar({
   onOpenDataManager,
   onOpenReportExport,
 }: TaskToolbarProps) {
-  const { filters, updateFilters, getFilteredTasks, selectedTaskIds, allTags, batchToggleTag, getSelectedTasksTagStatus } = useTaskContext();
+  const { filters, updateFilters, getFilteredTasks, selectedTaskIds, allTags, batchToggleTag, getSelectedTasksTagStatus, removeTagFromSelectedTasks } = useTaskContext();
   const taskCount = getFilteredTasks().length;
   const [showTagInput, setShowTagInput] = useState(false);
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
@@ -103,7 +103,7 @@ export function TaskToolbar({
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction onClick={() => {
               if (tagToRemove) {
-                batchToggleTag(tagToRemove);
+                removeTagFromSelectedTasks(tagToRemove);
               }
               setRemoveConfirmOpen(false);
               setTagToRemove(null);
