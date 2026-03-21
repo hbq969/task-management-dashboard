@@ -18,7 +18,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from './ui/alert-dialog';
-import { Plus, ArrowUpDown, Search, X, Database, FileText, Tag } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './ui/tooltip';
+import { Plus, ArrowUpDown, Search, X, Database, FileText, Tag, Trash2, Flag } from 'lucide-react';
 import type { Priority } from '../types/task';
 import { useState, useRef, useEffect } from 'react';
 
@@ -33,11 +39,22 @@ export function TaskToolbar({
   onOpenDataManager,
   onOpenReportExport,
 }: TaskToolbarProps) {
-  const { filters, updateFilters, getFilteredTasks, selectedTaskIds, allTags, batchToggleTag, getSelectedTasksTagStatus, removeTagFromSelectedTasks } = useTaskContext();
+  const {
+    filters,
+    updateFilters,
+    getFilteredTasks,
+    selectedTaskIds,
+    allTags,
+    batchToggleTag,
+    getSelectedTasksTagStatus,
+    removeTagFromSelectedTasks,
+    batchDelete,
+  } = useTaskContext();
   const taskCount = getFilteredTasks().length;
   const [showTagInput, setShowTagInput] = useState(false);
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
   const [tagToRemove, setTagToRemove] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const tagInputRef = useRef<HTMLDivElement>(null);
 
   // 点击外部关闭标签输入
@@ -89,6 +106,7 @@ export function TaskToolbar({
   const currentSort = `${filters.sortBy}-${filters.sortOrder}`;
 
   return (
+    <TooltipProvider>
     <div className="border-b bg-background p-4">
       {/* 移除标签确认对话框 */}
       <AlertDialog open={removeConfirmOpen} onOpenChange={setRemoveConfirmOpen}>
@@ -114,20 +132,44 @@ export function TaskToolbar({
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* 批量删除确认对话框 */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除任务？</AlertDialogTitle>
+            <AlertDialogDescription>
+              此操作将永久删除选中的 {selectedTaskIds.length} 个任务，此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                batchDelete();
+                setDeleteConfirmOpen(false);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              确认删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4 flex-1">
-          <div>
-            <h2 className="text-xl font-semibold">任务列表</h2>
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          <div className="shrink-0">
+            <h2 className="text-xl font-semibold whitespace-nowrap">任务列表</h2>
             <p className="text-sm text-muted-foreground mt-1">
               共 {taskCount} 个任务
             </p>
           </div>
 
           {/* 搜索框 */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="搜索任务标题或描述..."
+              placeholder="搜索任务..."
               value={filters.searchQuery}
               onChange={e => handleSearchChange(e.target.value)}
               className="pl-9 pr-9"
@@ -143,50 +185,70 @@ export function TaskToolbar({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 shrink-0">
           {/* 批量操作 */}
           {selectedTaskIds.length > 0 && (
-            <div className="relative" ref={tagInputRef}>
-              <Button
-                variant="outline"
-                onClick={() => setShowTagInput(!showTagInput)}
-              >
-                <Tag className="w-4 h-4 mr-2" />
-                打标签 ({selectedTaskIds.length})
-              </Button>
-              {showTagInput && (
-                <div className="absolute top-full mt-2 right-0 w-64 bg-background border rounded-lg shadow-lg p-3 z-50">
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">选择标签（点击切换）</p>
-                    {allTags.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {allTags.map(tag => {
-                          const status = getSelectedTasksTagStatus(tag);
-                          return (
-                            <button
-                              key={tag}
-                              type="button"
-                              onClick={() => handleTagClick(tag)}
-                              className={`px-2 py-1 text-xs rounded-md border transition-colors ${
-                                status === 'all'
-                                  ? 'bg-primary text-primary-foreground border-primary'
-                                  : status === 'some'
-                                  ? 'bg-primary/50 text-primary-foreground border-primary'
-                                  : 'bg-background hover:bg-muted'
-                              }`}
-                            >
-                              {tag}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">暂无标签</p>
-                    )}
+            <>
+              <div className="relative" ref={tagInputRef}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setShowTagInput(!showTagInput)}
+                    >
+                      <Tag className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>打标签 ({selectedTaskIds.length})</TooltipContent>
+                </Tooltip>
+                {showTagInput && (
+                  <div className="absolute top-full mt-2 right-0 w-64 bg-background border rounded-lg shadow-lg p-3 z-50">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">选择标签（点击切换）</p>
+                      {allTags.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {allTags.map(tag => {
+                            const status = getSelectedTasksTagStatus(tag);
+                            return (
+                              <button
+                                key={tag}
+                                type="button"
+                                onClick={() => handleTagClick(tag)}
+                                className={`px-2 py-1 text-xs rounded-md border transition-colors ${
+                                  status === 'all'
+                                    ? 'bg-primary text-primary-foreground border-primary'
+                                    : status === 'some'
+                                    ? 'bg-primary/50 text-primary-foreground border-primary'
+                                    : 'bg-background hover:bg-muted'
+                                }`}
+                              >
+                                {tag}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">暂无标签</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setDeleteConfirmOpen(true)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>删除选中 ({selectedTaskIds.length})</TooltipContent>
+              </Tooltip>
+            </>
           )}
 
           {/* 优先级筛选 */}
@@ -196,9 +258,14 @@ export function TaskToolbar({
               updateFilters({ priority: value as Priority | 'all' })
             }
           >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="优先级" />
-            </SelectTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <SelectTrigger className="w-auto min-w-[40px] h-9 px-2">
+                  <Flag className="w-4 h-4" />
+                </SelectTrigger>
+              </TooltipTrigger>
+              <TooltipContent>优先级筛选</TooltipContent>
+            </Tooltip>
             <SelectContent>
               <SelectItem value="all">全部优先级</SelectItem>
               <SelectItem value="urgent">紧急</SelectItem>
@@ -210,10 +277,14 @@ export function TaskToolbar({
 
           {/* 排序 */}
           <Select value={currentSort} onValueChange={handleSortChange}>
-            <SelectTrigger className="w-[160px]">
-              <ArrowUpDown className="w-4 h-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <SelectTrigger className="w-auto min-w-[40px] h-9 px-2">
+                  <ArrowUpDown className="w-4 h-4" />
+                </SelectTrigger>
+              </TooltipTrigger>
+              <TooltipContent>排序方式</TooltipContent>
+            </Tooltip>
             <SelectContent>
               <SelectItem value="createdAt-desc">最新创建</SelectItem>
               <SelectItem value="createdAt-asc">最早创建</SelectItem>
@@ -227,28 +298,37 @@ export function TaskToolbar({
           </Select>
 
           {/* 创建任务按钮 */}
-          <Button onClick={onCreateTask}>
-            <Plus className="w-4 h-4 mr-2" />
+          <Button onClick={onCreateTask} size="sm">
+            <Plus className="w-4 h-4 mr-1" />
             创建任务
           </Button>
 
           {/* 数据管理 */}
           {onOpenDataManager && (
-            <Button variant="outline" onClick={onOpenDataManager}>
-              <Database className="w-4 h-4 mr-2" />
-              数据管理
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" onClick={onOpenDataManager}>
+                  <Database className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>数据管理</TooltipContent>
+            </Tooltip>
           )}
 
           {/* 报告导出 */}
           {onOpenReportExport && (
-            <Button variant="outline" onClick={onOpenReportExport}>
-              <FileText className="w-4 h-4 mr-2" />
-              导出报告
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" onClick={onOpenReportExport}>
+                  <FileText className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>导出报告</TooltipContent>
+            </Tooltip>
           )}
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
