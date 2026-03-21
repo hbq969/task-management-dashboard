@@ -42,11 +42,13 @@ import {
   MoreVertical,
   Trash2,
   X,
+  Pencil,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import type { TaskStatus, TimeRangeFilter, Project } from '../types/task';
 import { timeRangeLabels } from '../constants/taskLabels';
+import { ProjectDialog } from './ProjectDialog';
 
 interface SidebarProps {
   onCreateProject: () => void;
@@ -61,6 +63,8 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
   const [newTagName, setNewTagName] = useState('');
   const [deleteTagDialogOpen, setDeleteTagDialogOpen] = useState(false);
   const [tagToDelete, setTagToDelete] = useState<string | null>(null);
+  const [editProjectDialogOpen, setEditProjectDialogOpen] = useState(false);
+  const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
 
   const statusCounts = useMemo(() => ({
     all: tasks.length,
@@ -95,6 +99,11 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
       setDeleteDialogOpen(false);
       setProjectToDelete(null);
     }
+  };
+
+  const handleEditClick = (project: Project) => {
+    setProjectToEdit(project);
+    setEditProjectDialogOpen(true);
   };
 
   const handleAddTag = () => {
@@ -251,6 +260,10 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEditClick(project)}>
+                        <Pencil className="w-4 h-4 mr-2" />
+                        编辑项目
+                      </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleDeleteClick(project)}
                         className="text-destructive focus:text-destructive"
@@ -471,6 +484,16 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 编辑项目对话框 */}
+      <ProjectDialog
+        open={editProjectDialogOpen}
+        onClose={() => {
+          setEditProjectDialogOpen(false);
+          setProjectToEdit(null);
+        }}
+        project={projectToEdit}
+      />
     </>
   );
 }

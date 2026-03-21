@@ -10,10 +10,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
+import type { Project } from '../types/task';
 
 interface ProjectDialogProps {
   open: boolean;
   onClose: () => void;
+  project?: Project | null; // 编辑模式下传入的项目
 }
 
 const projectColors = [
@@ -27,29 +29,47 @@ const projectColors = [
   '#f97316', // orange
 ];
 
-export function ProjectDialog({ open, onClose }: ProjectDialogProps) {
-  const { addProject } = useTaskContext();
+export function ProjectDialog({ open, onClose, project }: ProjectDialogProps) {
+  const { addProject, updateProject } = useTaskContext();
   const [name, setName] = useState('');
   const [selectedColor, setSelectedColor] = useState(projectColors[0]);
   const [order, setOrder] = useState(0);
 
+  const isEditMode = !!project;
+
   useEffect(() => {
     if (open) {
-      setName('');
-      setSelectedColor(projectColors[0]);
-      setOrder(0);
+      if (project) {
+        // 编辑模式：填充现有数据
+        setName(project.name);
+        setSelectedColor(project.color);
+        setOrder(project.order ?? 0);
+      } else {
+        // 创建模式：重置表单
+        setName('');
+        setSelectedColor(projectColors[0]);
+        setOrder(0);
+      }
     }
-  }, [open]);
+  }, [open, project]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    addProject({
-      name: name.trim(),
-      color: selectedColor,
-      order,
-    });
+    if (isEditMode && project) {
+      updateProject(project.id, {
+        name: name.trim(),
+        color: selectedColor,
+        order,
+      });
+    } else {
+      addProject({
+        name: name.trim(),
+        color: selectedColor,
+        order,
+      });
+    }
 
     onClose();
   };
@@ -58,8 +78,10 @@ export function ProjectDialog({ open, onClose }: ProjectDialogProps) {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>创建新项目</DialogTitle>
-          <DialogDescription>为您的任务创建一个新的项目分类</DialogDescription>
+          <DialogTitle>{isEditMode ? '编辑项目' : '创建新项目'}</DialogTitle>
+          <DialogDescription>
+            {isEditMode ? '修改项目信息' : '为您的任务创建一个新的项目分类'}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
@@ -106,7 +128,7 @@ export function ProjectDialog({ open, onClose }: ProjectDialogProps) {
 
           <div className="flex gap-3 pt-4">
             <Button type="submit" className="flex-1">
-              创建项目
+              {isEditMode ? '保存修改' : '创建项目'}
             </Button>
             <Button type="button" variant="outline" onClick={onClose}>
               取消
