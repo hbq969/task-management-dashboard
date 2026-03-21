@@ -18,7 +18,6 @@ import {
   SelectValue,
 } from './ui/select';
 import { Separator } from './ui/separator';
-import { ScrollArea } from './ui/scroll-area';
 import { FileText, Copy, Check, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
@@ -242,13 +241,13 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
 
         {/* 报告区域 - 自适应高度 */}
         {report && (
-          <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
+          <div className="grid grid-rows-[auto_1fr] min-h-0 flex-1">
             <div className="flex items-center justify-between mb-2">
               <Label>{reportTypeLabels[reportType]} ({formatLabels[format]})</Label>
             </div>
 
             {/* Preview Area - 自适应高度 */}
-            <ScrollArea className="flex-1 border rounded-md bg-muted/30">
+            <div className="min-h-0 overflow-auto border rounded-md bg-muted/30">
               <div className="p-4">
                 {format === 'markdown' ? (
                   <div className="prose prose-sm max-w-none dark:prose-invert
@@ -267,7 +266,7 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
                   </pre>
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         )}
 
