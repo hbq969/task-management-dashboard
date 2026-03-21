@@ -45,6 +45,7 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
+  Check,
 } from 'lucide-react';
 import type { Task } from '../types/task';
 import { priorityColors, priorityLabels, statusLabels, getProgressColor } from '../constants/taskLabels';
@@ -193,12 +194,23 @@ export function TaskList({ onEditTask }: TaskListProps) {
                         onCheckedChange={() => toggleTaskSelection(task.id)}
                         className="mt-0.5"
                       />
-                      {/* 状态切换 checkbox */}
-                      <Checkbox
-                        checked={task.status === 'completed'}
-                        onCheckedChange={() => handleStatusToggle(task)}
-                        className="mt-0.5"
-                      />
+                      {/* 状态切换按钮 - 圆形 */}
+                      <button
+                        onClick={() => handleStatusToggle(task)}
+                        className={`
+                          w-5 h-5 rounded-full border-2 flex items-center justify-center
+                          transition-all duration-200 mt-0.5 shrink-0
+                          ${task.status === 'completed'
+                            ? 'bg-green-500 border-green-500 text-white'
+                            : 'border-gray-300 hover:border-green-400 hover:bg-green-50'
+                          }
+                        `}
+                        title={task.status === 'completed' ? '标记为待办' : '标记为完成'}
+                      >
+                        {task.status === 'completed' && (
+                          <Check className="w-3 h-3" />
+                        )}
+                      </button>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <Tooltip>
