@@ -148,11 +148,14 @@ export function TaskList({ onEditTask }: TaskListProps) {
               全选 {selectedTaskIds.length > 0 && `(${selectedTaskIds.length} 个已选择)`}
             </label>
           </div>
-          {selectedTaskIds.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={clearSelection}>
-              取消选择
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearSelection}
+            className={selectedTaskIds.length > 0 ? 'visible' : 'invisible'}
+          >
+            取消选择
+          </Button>
         </div>
       )}
       <TooltipProvider>
@@ -198,7 +201,7 @@ export function TaskList({ onEditTask }: TaskListProps) {
                       <button
                         onClick={() => handleStatusToggle(task)}
                         className={`
-                          w-5 h-5 rounded-full border-2 flex items-center justify-center
+                          size-4 rounded-full border-2 flex items-center justify-center
                           transition-all duration-200 mt-0.5 shrink-0
                           ${task.status === 'completed'
                             ? 'bg-green-500 border-green-500 text-white'
@@ -208,7 +211,7 @@ export function TaskList({ onEditTask }: TaskListProps) {
                         title={task.status === 'completed' ? '标记为待办' : '标记为完成'}
                       >
                         {task.status === 'completed' && (
-                          <Check className="w-3 h-3" />
+                          <Check className="size-2.5" />
                         )}
                       </button>
                       <div className="flex-1 min-w-0">

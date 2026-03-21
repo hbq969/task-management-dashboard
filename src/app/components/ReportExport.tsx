@@ -105,7 +105,7 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
   const [reportType, setReportType] = useState<'weekly' | 'monthly' | 'quarterly'>('weekly');
   const [report, setReport] = useState('');
   const [copied, setCopied] = useState(false);
-  const [format, setFormat] = useState<ExportFormat>('markdown');
+  const [format, setFormat] = useState<ExportFormat>('plaintext');
   const [filterTags, setFilterTags] = useState<string[]>([]);
 
   const handleGenerateReport = () => {
