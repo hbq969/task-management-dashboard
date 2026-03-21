@@ -242,7 +242,7 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
 
         {/* 报告区域 - 自适应高度 */}
         {report && (
-          <div className="flex flex-col min-h-0 flex-1">
+          <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
             <div className="flex items-center justify-between mb-2">
               <Label>{reportTypeLabels[reportType]} ({formatLabels[format]})</Label>
             </div>

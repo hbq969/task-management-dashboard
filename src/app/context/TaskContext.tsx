@@ -516,6 +516,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
             : task
         )
       );
+      // 确保标签保留在预定义列表中，即使没有任务使用也不会消失
+      setPredefinedTags(prev => {
+        if (!prev.includes(tag)) {
+          return [...prev, tag];
+        }
+        return prev;
+      });
     },
     [selectedTaskIds]
   );
