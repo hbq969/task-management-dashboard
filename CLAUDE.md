@@ -1,74 +1,82 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+本文件为 Claude Code 提供项目指导，记录项目架构、开发规范、测试流程和开发历程。
 
-## Project Overview
+## 项目概述
 
-Task Management Dashboard - A desktop task management application built with React, TypeScript, and Tauri. The UI is in Chinese (Simplified).
+**任务管理仪表盘** - 基于 React + TypeScript + Tauri 2 构建的桌面任务管理应用。
 
-## Commands
+- **UI 语言**: 简体中文
+- **版本**: v1.0.0
+- **仓库**: https://github.com/hbq969/task-management-dashboard
+
+## 命令
 
 ```bash
-# Development
-npm run dev          # Start Vite dev server (port 5173)
-npm run tauri:dev    # Start Tauri dev mode (desktop app)
+# 开发
+npm run dev          # 启动 Vite 开发服务器 (端口 5173)
+npm run tauri:dev    # 启动 Tauri 桌面应用开发模式
 
-# Build
-npm run build        # Build frontend to dist/
-npm run tauri:build  # Build desktop app for current platform
+# 构建
+npm run build        # 构建前端到 dist/
+npm run tauri:build  # 构建当前平台桌面应用
 
-# Preview
-npm run preview      # Preview production build
+# 预览
+npm run preview      # 预览生产构建
 ```
 
-## Architecture
+## 技术栈
 
-### Tech Stack
-- **Frontend**: React 18 + TypeScript + Vite
-- **Styling**: Tailwind CSS 4 + shadcn/ui (Radix UI primitives)
-- **Routing**: React Router with HashRouter (required for Tauri)
-- **State**: React Context (TaskContext) with localStorage persistence
-- **Desktop**: Tauri 2 (Rust backend, minimal - mostly shell)
+| 领域 | 技术 |
+|------|------|
+| 前端框架 | React 18 + TypeScript |
+| 构建工具 | Vite 6 |
+| 样式方案 | Tailwind CSS 4 + shadcn/ui (Radix UI) |
+| 路由 | React Router 7 (HashRouter) |
+| 状态管理 | React Context + Hooks |
+| 桌面框架 | Tauri 2 (Rust) |
+| 文件存储 | @tauri-apps/plugin-fs |
+| 图标 | Lucide React |
+| 日期处理 | date-fns |
+| Markdown 渲染 | react-markdown |
+| Excel 导出 | xlsx |
 
-### Directory Structure
+## 目录结构
 
 ```
 src/
-├── main.tsx                 # Entry point
+├── main.tsx                    # 入口文件
 ├── app/
-│   ├── App.tsx              # RouterProvider wrapper
-│   ├── routes.tsx           # HashRouter config
-│   ├── components/          # Feature components
-│   │   ├── ui/              # shadcn/ui components (Radix-based)
-│   │   ├── Dashboard.tsx    # Main layout, composes all components
-│   │   ├── TaskList.tsx     # Task display with pagination
-│   │   ├── TaskDrawer.tsx   # Task create/edit form
-│   │   ├── TaskToolbar.tsx  # Filters, search, actions
-│   │   └── ...
+│   ├── App.tsx                 # 路由配置
+│   ├── routes.tsx              # HashRouter 配置
+│   ├── components/
+│   │   ├── ui/                 # shadcn/ui 基础组件
+│   │   ├── Dashboard.tsx       # 主布局容器
+│   │   ├── Sidebar.tsx         # 左侧导航栏（状态、项目、标签、时间）
+│   │   ├── TaskList.tsx        # 任务列表（分页、多选、状态切换）
+│   │   ├── TaskDrawer.tsx      # 任务创建/编辑抽屉
+│   │   ├── TaskToolbar.tsx     # 工具栏（搜索、筛选、排序、批量操作）
+│   │   ├── ProjectDialog.tsx   # 项目创建/编辑对话框
+│   │   ├── PersonManager.tsx   # 人员管理（含 Excel 导入）
+│   │   ├── DataManager.tsx     # 数据导入/导出
+│   │   └── ReportExport.tsx    # 报告导出（周报/月报/季报）
 │   ├── context/
-│   │   └── TaskContext.tsx  # Global state: tasks, projects, people, filters
+│   │   └── TaskContext.tsx     # 全局状态管理
 │   ├── types/
-│   │   └── task.ts          # Task, Project, Person, FilterOptions types
-│   └── constants/
-│       └── taskLabels.ts    # Label mappings, predefined tags
+│   │   └── task.ts             # 类型定义
+│   ├── constants/
+│   │   └── taskLabels.ts       # 中文标签映射
+│   └── services/
+│       └── storage.ts          # 文件存储服务（Tauri/localStorage）
 └── styles/
-    └── index.css            # Global styles, scrollbar customization
+    └── index.css               # 全局样式、滚动条定制
 ```
 
-### State Management
-
-All app state lives in `TaskContext.tsx`:
-- **Tasks**: CRUD, filtering, sorting, batch operations
-- **Projects**: Group tasks by project
-- **People**: Contact management, task assignment
-- **Filters**: Status, priority, project, tags, time range, search
-- **Selection**: Multi-select for batch operations
-- **Persistence**: Auto-syncs to localStorage on change
-
-### Key Types
+## 核心数据模型
 
 ```typescript
 // src/app/types/task.ts
+
 interface Task {
   id: string;
   title: string;
@@ -78,27 +86,203 @@ interface Task {
   status: 'todo' | 'in-progress' | 'completed';
   projectId: string;
   tags: string[];
-  progress: number;  // 0-100
+  progress: number;           // 0-100
   assigneeId?: string;
   relatedPersonIds: string[];
-  // ...timestamps
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  color: string;
+  taskCount: number;
+  order: number;              // 排序字段
+}
+
+interface Person {
+  id: string;
+  name: string;
+  company?: string;
+  department?: string;
+  createdAt: string;
+}
+
+interface FilterOptions {
+  status: 'all' | Task['status'];
+  priority: 'all' | Task['priority'];
+  projectId: string;
+  tags: string[];
+  sortBy: 'createdAt' | 'dueDate' | 'priority' | 'title';
+  sortOrder: 'asc' | 'desc';
+  timeRange: 'all' | 'today' | 'week' | 'month' | 'custom';
+  searchQuery: string;
+  customDateStart?: string;
+  customDateEnd?: string;
 }
 ```
 
-### UI Components
+## 状态管理 (TaskContext)
 
-Uses shadcn/ui pattern. Components in `src/app/components/ui/` are Radix UI primitives wrapped with Tailwind. When adding new UI components, follow the same pattern or copy from shadcn/ui documentation.
+所有应用状态集中在 `TaskContext.tsx`:
 
-### Tauri Configuration
+### 数据状态
+- `tasks` - 任务列表
+- `projects` - 项目列表
+- `people` - 人员列表
+- `predefinedTags` - 预定义标签
+- `filters` - 筛选条件
+- `selectedTaskIds` - 选中的任务 ID
+- `currentPage` / `pageSize` - 分页状态
 
-- Config: `src-tauri/tauri.conf.json`
-- Uses HashRouter (not BrowserRouter) for file:// protocol compatibility
-- Frontend dist is bundled into the app via `vite-plugin-singlefile`
+### 核心操作
+- **任务 CRUD**: `addTask`, `updateTask`, `deleteTask`
+- **项目管理**: `addProject`, `updateProject`, `deleteProject`
+- **人员管理**: `addPerson`, `updatePerson`, `deletePerson`
+- **筛选排序**: `updateFilters`, `getFilteredTasks`
+- **批量操作**: `batchUpdateStatus`, `batchDelete`, `batchMoveProject`, `batchToggleTag`, `removeTagFromSelectedTasks`
+- **标签管理**: `addPredefinedTag`, `deleteTag`, `getSelectedTasksTagStatus`
+- **数据持久化**: `exportData`, `importData`
+- **报告生成**: `generateReport(type, startDate?, filterTags?)`
 
-## Notes
+## 开发规范
 
-- **Language**: UI labels are in Chinese. Keep Chinese text in `taskLabels.ts`.
-- **No tests**: Project currently has no test framework configured.
-- **Path alias**: `@/` maps to `./src/`
-- 每次开发完代码后请使用 chrome dev tools 进行测试验证
-- 每次测试完后请重新构建输出产出物
+### 代码风格
+- **不可变数据**: 使用展开运算符和 `map/filter`，禁止直接修改状态
+- **函数组件**: 统一使用函数组件 + Hooks
+- **文件大小**: 单文件不超过 800 行
+- **路径别名**: `@/` 映射到 `./src/`
+
+### UI 组件规范
+- 使用 shadcn/ui 模式：Radix UI 原语 + Tailwind CSS
+- 中文文本统一放在 `taskLabels.ts`
+- 响应式设计：使用 `shrink-0`, `whitespace-nowrap` 防止关键元素换行
+- 图标按钮配合 Tooltip 使用
+
+### Git 提交规范
+```
+<type>: <description>
+
+Types: feat, fix, refactor, docs, test, chore, perf, ci
+```
+
+## 测试流程
+
+### 开发阶段测试
+1. **启动开发服务器**: `npm run dev`
+2. **Chrome DevTools MCP 测试**:
+   - 页面快照验证: `take_snapshot`
+   - 截图验证: `take_screenshot`
+   - 交互测试: `click`, `fill`, `hover`
+3. **功能验证清单**:
+   - [ ] 创建/编辑/删除任务
+   - [ ] 状态切换（待办/进行中/已完成）
+   - [ ] 进度联动（0%=待办, 1-99%=进行中, 100%=已完成）
+   - [ ] 批量操作（打标签、删除）
+   - [ ] 筛选排序
+   - [ ] 报告导出
+   - [ ] 数据导入导出
+   - [ ] 响应式布局
+
+### 构建验证
+```bash
+npm run build          # 前端构建
+npm run tauri:build    # 桌面应用构建
+```
+
+### 完成检查
+- [ ] 功能测试通过
+- [ ] 构建成功
+- [ ] `git commit` 提交
+- [ ] 更新 `TODO.md`
+
+## 关键实现细节
+
+### 1. 数据持久化
+- **Tauri 环境**: 使用 `@tauri-apps/plugin-fs` 写入 `{appDataDir}/todo-app/data.json`
+- **浏览器环境**: 降级到 `localStorage`
+- **自动迁移**: 首次启动时自动从 `localStorage` 迁移到文件存储
+
+### 2. 进度联动逻辑
+```typescript
+// TaskDrawer.tsx
+if (progress === 0) status = 'todo';
+else if (progress < 100) status = 'in-progress';
+else status = 'completed';
+```
+
+### 3. 批量标签切换
+- 点击标签即时切换
+- 所有选中任务都有标签 → 确认后移除
+- 部分有/都没有 → 直接添加
+- 使用 `getSelectedTasksTagStatus()` 判断状态
+
+### 4. 报告导出
+- 支持格式: Markdown、纯文本、Excel
+- 按项目分组，按状态排序（已完成 → 进行中 → 待办）
+- 项目按 `order` 字段排序
+- 筛选标签后导出
+
+### 5. 响应式工具栏
+- 图标按钮 + Tooltip 节省空间
+- 创建任务按钮保留文字（主要操作）
+- 搜索框 `max-w-xs` 限制宽度
+
+## 开发历程 (v1.0.0)
+
+### 第一阶段：基础架构 (2026-03-18 ~ 2026-03-19)
+- Tauri 2 桌面应用集成
+- React + TypeScript + Vite 项目搭建
+- shadcn/ui 组件库集成
+- HashRouter 配置（兼容 Tauri file:// 协议）
+- 任务 CRUD 基础功能
+- 项目/人员管理
+
+### 第二阶段：功能增强 (2026-03-19 ~ 2026-03-20)
+- 本地文件存储替代 localStorage
+- 报告导出（周报/月报/季报）
+- 进度联动逻辑
+- 时间范围筛选
+- 下拉列表搜索
+- 标签管理
+
+### 第三阶段：批量操作 (2026-03-20 ~ 2026-03-21)
+- 任务多选功能
+- 全选/取消全选
+- 批量打标签（含确认对话框）
+- 批量删除
+- 项目排序字段
+- 人员 Excel 导入
+
+### 第四阶段：UI 优化 (2026-03-21)
+- 响应式工具栏布局
+- 图标按钮 + Tooltip
+- 滚动条样式定制
+- 各种 bug 修复
+
+## 常见问题排查
+
+### 1. 构建失败
+- 检查 Node 版本 (推荐 18+)
+- 删除 `node_modules` 重新安装
+- 检查 Tauri Rust 依赖
+
+### 2. 滚动问题
+- 避免 `ScrollArea` 嵌套
+- 使用 `onWheel` 事件处理内部滚动
+
+### 3. 状态不同步
+- 检查是否使用了不可变更新
+- 确认 `useEffect` 依赖数组正确
+
+### 4. 分页假死
+- 使用 `useEffect` 替代 `useMemo` 处理副作用
+
+## 注意事项
+
+- **UI 语言**: 保持中文，新增文案放入 `taskLabels.ts`
+- **无测试框架**: 当前项目未配置自动化测试，使用 Chrome DevTools MCP 手动测试
+- **Tauri 权限**: 文件系统权限在 `src-tauri/capabilities/default.json` 配置
+- **单文件构建**: 使用 `vite-plugin-singlefile` 将所有资源内联到 HTML
