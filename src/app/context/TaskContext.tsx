@@ -592,44 +592,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   // Report generation
   const generateReport = useCallback(
-    (type: 'weekly' | 'monthly' | 'quarterly', startDate?: Date, filterTags?: string[]): string => {
-      const now = startDate || new Date();
-      let reportStartDate: Date;
-      let reportEndDate: Date;
-
-      switch (type) {
-        case 'weekly':
-          reportStartDate = new Date(now);
-          reportStartDate.setDate(now.getDate() - 7);
-          reportEndDate = now;
-          break;
-        case 'monthly':
-          reportStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
-          reportEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-          break;
-        case 'quarterly':
-          const quarter = Math.floor(now.getMonth() / 3);
-          reportStartDate = new Date(now.getFullYear(), quarter * 3, 1);
-          reportEndDate = new Date(now.getFullYear(), quarter * 3 + 3, 0);
-          break;
-      }
-
+    (_type: 'weekly' | 'monthly' | 'quarterly', _startDate?: Date, filterTags?: string[]): string => {
       const formatDate = (date: Date) =>
         date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 
-      const typeLabels = {
-        weekly: '周报',
-        monthly: '月报',
-        quarterly: '季报',
-      };
-
-      // Filter tasks by date range
-      let reportTasks = tasks.filter(task => {
-        const taskDate = new Date(task.createdAt);
-        return taskDate >= reportStartDate && taskDate <= reportEndDate;
-      });
-
-      // Filter by tags if specified
+      // Filter by tags if specified (no time filtering)
+      let reportTasks = tasks;
       if (filterTags && filterTags.length > 0) {
         reportTasks = reportTasks.filter(task =>
           filterTags.some(tag => task.tags.includes(tag))
@@ -654,8 +622,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       );
 
       // Build report
-      let report = `# ${typeLabels[type]}\n\n`;
-      report += `**时间范围**: ${formatDate(reportStartDate)} ~ ${formatDate(reportEndDate)}\n\n`;
+      let report = `# 任务报告\n\n`;
       report += `**任务统计**: 共 ${reportTasks.length} 个任务\n\n`;
 
       const statusLabels = {

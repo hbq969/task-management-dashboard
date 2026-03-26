@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { useTaskContext } from '../context/TaskContext';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
-import { Input } from './ui/input';
 import {
   Dialog,
   DialogContent,
@@ -10,13 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select';
 import { Separator } from './ui/separator';
 import { FileText, Copy, Check, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -101,7 +93,6 @@ const markdownToPlainText = (md: string): string => {
 
 export function ReportExport({ open, onClose }: ReportExportProps) {
   const { generateReport, allTags } = useTaskContext();
-  const [reportType, setReportType] = useState<'weekly' | 'monthly' | 'quarterly'>('weekly');
   const [report, setReport] = useState('');
   const [copied, setCopied] = useState(false);
   const [format, setFormat] = useState<ExportFormat>('plaintext');
@@ -109,7 +100,7 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
 
   const handleGenerateReport = () => {
     const tags = filterTags.length > 0 ? filterTags : undefined;
-    const generatedReport = generateReport(reportType, undefined, tags);
+    const generatedReport = generateReport('weekly', undefined, tags);
     setReport(generatedReport);
   };
 
@@ -134,12 +125,6 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const reportTypeLabels = {
-    weekly: '周报',
-    monthly: '月报',
-    quarterly: '季报',
-  };
-
   const formatLabels = {
     markdown: 'Markdown',
     plaintext: '纯文本',
@@ -160,37 +145,23 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
         <div className="space-y-4 mt-4 flex-shrink-0">
           <div className="flex items-end gap-4">
             <div className="flex-1 space-y-2">
-              <Label>报告类型</Label>
-              <Select
-                value={reportType}
-                onValueChange={value =>
-                  setReportType(value as 'weekly' | 'monthly' | 'quarterly')
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="weekly">周报</SelectItem>
-                  <SelectItem value="monthly">月报</SelectItem>
-                  <SelectItem value="quarterly">季报</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex-1 space-y-2">
               <Label>导出格式</Label>
-              <Select
-                value={format}
-                onValueChange={value => setFormat(value as ExportFormat)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="markdown">Markdown</SelectItem>
-                  <SelectItem value="plaintext">纯文本</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                {(Object.entries(formatLabels) as [ExportFormat, string][]).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setFormat(value)}
+                    className={`flex-1 px-4 py-2 text-sm rounded-md border transition-colors ${
+                      format === value
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background hover:bg-muted border-input'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
             <Button onClick={handleGenerateReport}>生成报告</Button>
           </div>
@@ -243,7 +214,7 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
         {report && (
           <div className="grid grid-rows-[auto_1fr] min-h-0 flex-1">
             <div className="flex items-center justify-between mb-2">
-              <Label>{reportTypeLabels[reportType]} ({formatLabels[format]})</Label>
+              <Label>周报 ({formatLabels[format]})</Label>
             </div>
 
             {/* Preview Area - 自适应高度 */}
@@ -273,7 +244,7 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
         {!report && (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground flex-1">
             <FileText className="w-12 h-12 mb-4 opacity-20" />
-            <p>选择报告类型并点击"生成报告"</p>
+            <p>点击"生成报告"查看本周任务</p>
           </div>
         )}
 

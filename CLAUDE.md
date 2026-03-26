@@ -198,38 +198,6 @@ npm run tauri:build    # 桌面应用构建
 - [ ] `git commit` 提交
 - [ ] 更新 `TODO.md`
 
-## 关键实现细节
-
-### 1. 数据持久化
-- **Tauri 环境**: 使用 `@tauri-apps/plugin-fs` 写入 `{appDataDir}/todo-app/data.json`
-- **浏览器环境**: 降级到 `localStorage`
-- **自动迁移**: 首次启动时自动从 `localStorage` 迁移到文件存储
-
-### 2. 进度联动逻辑
-```typescript
-// TaskDrawer.tsx
-if (progress === 0) status = 'todo';
-else if (progress < 100) status = 'in-progress';
-else status = 'completed';
-```
-
-### 3. 批量标签切换
-- 点击标签即时切换
-- 所有选中任务都有标签 → 确认后移除
-- 部分有/都没有 → 直接添加
-- 使用 `getSelectedTasksTagStatus()` 判断状态
-
-### 4. 报告导出
-- 支持格式: Markdown、纯文本、Excel
-- 按项目分组，按状态排序（已完成 → 进行中 → 待办）
-- 项目按 `order` 字段排序
-- 筛选标签后导出
-
-### 5. 响应式工具栏
-- 图标按钮 + Tooltip 节省空间
-- 创建任务按钮保留文字（主要操作）
-- 搜索框 `max-w-xs` 限制宽度
-
 ## 注意事项
 
 - **UI 语言**: 保持中文，新增文案放入 `taskLabels.ts`
