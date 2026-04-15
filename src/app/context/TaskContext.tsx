@@ -643,10 +643,21 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       sortedProjectGroups.forEach(([projectName, { tasks: projectTasks }]) => {
         report += `## ${projectName}\n\n`;
 
-        // 按状态排序：已完成 -> 进行中 -> 待办
-        const sortedTasks = [...projectTasks].sort(
-          (a, b) => statusOrder[a.status] - statusOrder[b.status]
-        );
+        // 按状态排序：已完成 -> 进行中(按进度降序) -> 待办(按截止时间升序)
+        const sortedTasks = [...projectTasks].sort((a, b) => {
+          if (a.status !== b.status) {
+            return statusOrder[a.status] - statusOrder[b.status];
+          }
+          if (a.status === 'in-progress') {
+            return b.progress - a.progress;
+          }
+          if (a.status === 'todo') {
+            const aDate = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+            const bDate = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+            return aDate - bDate;
+          }
+          return 0;
+        });
 
         sortedTasks.forEach(task => {
           const assignee = task.assigneeId
