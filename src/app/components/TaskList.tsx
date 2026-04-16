@@ -48,7 +48,7 @@ import {
   Check,
 } from 'lucide-react';
 import type { Task } from '../types/task';
-import { priorityColors, priorityLabels, statusLabels, getProgressColor } from '../constants/taskLabels';
+import { priorityColors, priorityLabels, statusLabels, statusColors, getProgressColor } from '../constants/taskLabels';
 
 interface TaskListProps {
   onEditTask: (task: Task) => void;
@@ -175,7 +175,7 @@ export function TaskList({ onEditTask }: TaskListProps) {
             const isOverdue =
               task.dueDate &&
               new Date(task.dueDate) < new Date() &&
-              task.status !== 'completed';
+              task.status !== 'completed' && task.status !== 'ended';
 
             return (
               <motion.div
@@ -186,7 +186,7 @@ export function TaskList({ onEditTask }: TaskListProps) {
               >
                 <Card
                   className={`transition-all hover:shadow-sm ${
-                    task.status === 'completed' ? 'opacity-60' : ''
+                    ['completed', 'ended'].includes(task.status) ? 'opacity-60' : ''
                   } ${selectedTaskIds.includes(task.id) ? 'ring-2 ring-primary' : ''}`}
                 >
                   <CardContent className="py-2.5 px-3">
@@ -220,7 +220,7 @@ export function TaskList({ onEditTask }: TaskListProps) {
                             <TooltipTrigger asChild>
                               <div
                                 className={`text-sm font-medium cursor-pointer hover:text-primary flex-1 ${
-                                  task.status === 'completed'
+                                  ['completed', 'ended'].includes(task.status)
                                     ? 'line-through text-muted-foreground'
                                     : ''
                                 }`}
@@ -272,13 +272,7 @@ export function TaskList({ onEditTask }: TaskListProps) {
 
                           {/* 状态 */}
                           <Badge
-                            variant={
-                              task.status === 'completed'
-                                ? 'default'
-                                : task.status === 'in-progress'
-                                ? 'secondary'
-                                : 'outline'
-                            }
+                            variant={statusColors[task.status] as any}
                             className="text-[10px] px-1.5 py-0 h-4"
                           >
                             <Clock className="w-2.5 h-2.5 mr-0.5" />

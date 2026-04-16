@@ -11,7 +11,6 @@ import {
 } from './ui/dialog';
 import { Separator } from './ui/separator';
 import { FileText, Copy, Check, X } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
 
 interface ReportExportProps {
   open: boolean;
@@ -95,7 +94,6 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
   const { generateReport, allTags } = useTaskContext();
   const [report, setReport] = useState('');
   const [copied, setCopied] = useState(false);
-  const [format, setFormat] = useState<ExportFormat>('plaintext');
   const [filterTags, setFilterTags] = useState<string[]>([]);
 
   const handleGenerateReport = () => {
@@ -116,18 +114,13 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
 
   const displayContent = useMemo(() => {
     if (!report) return '';
-    return format === 'plaintext' ? markdownToPlainText(report) : report;
-  }, [report, format]);
+    return markdownToPlainText(report);
+  }, [report]);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(displayContent);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const formatLabels = {
-    markdown: 'Markdown',
-    plaintext: '纯文本',
   };
 
   return (
@@ -144,25 +137,6 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
         {/* 表单区域 - 固定高度 */}
         <div className="space-y-4 mt-4 flex-shrink-0">
           <div className="flex items-end gap-4">
-            <div className="flex-1 space-y-2">
-              <Label>导出格式</Label>
-              <div className="flex gap-2">
-                {(Object.entries(formatLabels) as [ExportFormat, string][]).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setFormat(value)}
-                    className={`flex-1 px-4 py-2 text-sm rounded-md border transition-colors ${
-                      format === value
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-background hover:bg-muted border-input'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
             <Button onClick={handleGenerateReport}>生成报告</Button>
           </div>
 
@@ -214,28 +188,15 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
         {report && (
           <div className="grid grid-rows-[auto_1fr] min-h-0 flex-1">
             <div className="flex items-center justify-between mb-2">
-              <Label>周报 ({formatLabels[format]})</Label>
+              <Label>周报</Label>
             </div>
 
             {/* Preview Area - 自适应高度 */}
             <div className="min-h-0 overflow-auto border rounded-md bg-muted/30">
               <div className="p-4">
-                {format === 'markdown' ? (
-                  <div className="prose prose-sm max-w-none dark:prose-invert
-                    prose-headings:mt-6 prose-headings:mb-3
-                    prose-h1:text-xl prose-h1:font-bold prose-h1:border-b prose-h1:pb-2
-                    prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-8 prose-h2:pt-2
-                    prose-h3:text-base prose-h3:font-medium prose-h3:mt-4
-                    prose-p:my-2 prose-li:my-1
-                    prose-ul:list-disc prose-ul:pl-4
-                    prose-strong:text-foreground">
-                    <ReactMarkdown>{report}</ReactMarkdown>
-                  </div>
-                ) : (
-                  <pre className="font-mono text-sm whitespace-pre-wrap break-words">
-                    {displayContent}
-                  </pre>
-                )}
+                <pre className="font-mono text-sm whitespace-pre-wrap break-words">
+                  {displayContent}
+                </pre>
               </div>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { useTaskContext } from '../context/TaskContext';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Checkbox } from './ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -46,8 +47,10 @@ export function PersonManager({ open, onClose }: PersonManagerProps) {
   const { people, addPerson, updatePerson, deletePerson, tasks } = useTaskContext();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false);
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
   const [deletingPerson, setDeletingPerson] = useState<Person | null>(null);
+  const [selectedPersonIds, setSelectedPersonIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -182,9 +185,43 @@ export function PersonManager({ open, onClose }: PersonManagerProps) {
     });
   }, [people, searchQuery]);
 
+  // 批量选择相关函数
+  const togglePersonSelection = (personId: string) => {
+    setSelectedPersonIds(prev =>
+      prev.includes(personId)
+        ? prev.filter(id => id !== personId)
+        : [...prev, personId]
+    );
+  };
+
+  const selectAllFiltered = () => {
+    setSelectedPersonIds(filteredPeople.map(p => p.id));
+  };
+
+  const clearSelection = () => {
+    setSelectedPersonIds([]);
+  };
+
+  const handleBatchDeleteClick = () => {
+    setBatchDeleteDialogOpen(true);
+  };
+
+  const handleBatchDeleteConfirm = () => {
+    selectedPersonIds.forEach(id => deletePerson(id));
+    setBatchDeleteDialogOpen(false);
+    setSelectedPersonIds([]);
+  };
+
+  // 关闭时清除选择
+  const handleClose = () => {
+    onClose();
+    setSelectedPersonIds([]);
+    setSearchQuery('');
+  };
+
   return (
     <>
-      <Dialog open={open} onOpenChange={onClose}>
+      <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -237,42 +274,90 @@ export function PersonManager({ open, onClose }: PersonManagerProps) {
                 <p className="text-sm">{searchQuery ? '请尝试其他搜索条件' : '点击"添加人员"开始添加'}</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {filteredPeople.map(person => (
-                  <div
-                    key={person.id}
-                    className="flex items-start justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">{person.name}</span>
-                        <span className="text-sm text-muted-foreground">
-                          ({getPersonTaskCount(person.id)} 个任务)
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
-                        {person.company && (
-                          <div className="flex items-center gap-1">
-                            <Building2 className="w-3 h-3" />
-                            {person.company}
-                            {person.department && ` - ${person.department}`}
-                          </div>
-                        )}
-                        {person.phone && (
-                          <div className="flex items-center gap-1">
-                            <Phone className="w-3 h-3" />
-                            {person.phone}
-                          </div>
-                        )}
-                        {person.email && (
-                          <div className="flex items-center gap-1 col-span-2">
-                            <Mail className="w-3 h-3" />
-                            {person.email}
-                          </div>
-                        )}
-                      </div>
+              <>
+                {/* 全选工具栏 */}
+                {filteredPeople.length > 0 && (
+                  <div className="flex items-center justify-between mb-3 p-2 bg-secondary/10 rounded-md border">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={selectedPersonIds.length > 0 && selectedPersonIds.length === filteredPeople.length}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            selectAllFiltered();
+                          } else {
+                            clearSelection();
+                          }
+                        }}
+                      />
+                      <span className="text-sm font-medium">
+                        全选 {selectedPersonIds.length > 0 && `(${selectedPersonIds.length} 个已选择)`}
+                      </span>
                     </div>
+                    <div className="flex items-center gap-2">
+                      {selectedPersonIds.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={handleBatchDeleteClick}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          批量删除
+                        </Button>
+                      )}
+                      {selectedPersonIds.length > 0 && (
+                        <Button variant="ghost" size="sm" onClick={clearSelection}>
+                          取消选择
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <div className="space-y-3">
+                  {filteredPeople.map(person => (
+                    <div
+                      key={person.id}
+                      className={`flex items-start justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors ${
+                        selectedPersonIds.includes(person.id) ? 'ring-2 ring-primary' : ''
+                      }`}
+                    >
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <Checkbox
+                          checked={selectedPersonIds.includes(person.id)}
+                          onCheckedChange={() => togglePersonSelection(person.id)}
+                          className="mt-1"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <User className="w-4 h-4 text-muted-foreground" />
+                            <span className="font-medium">{person.name}</span>
+                            <span className="text-sm text-muted-foreground">
+                              ({getPersonTaskCount(person.id)} 个任务)
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+                            {person.company && (
+                              <div className="flex items-center gap-1">
+                                <Building2 className="w-3 h-3" />
+                                {person.company}
+                                {person.department && ` - ${person.department}`}
+                              </div>
+                            )}
+                            {person.phone && (
+                              <div className="flex items-center gap-1">
+                                <Phone className="w-3 h-3" />
+                                {person.phone}
+                              </div>
+                            )}
+                            {person.email && (
+                              <div className="flex items-center gap-1 col-span-2">
+                                <Mail className="w-3 h-3" />
+                                {person.email}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
@@ -293,6 +378,7 @@ export function PersonManager({ open, onClose }: PersonManagerProps) {
                   </div>
                 ))}
               </div>
+              </>
             )}
           </ScrollArea>
         </DialogContent>
@@ -397,6 +483,22 @@ export function PersonManager({ open, onClose }: PersonManagerProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirm}>删除</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Batch Delete Confirmation */}
+      <AlertDialog open={batchDeleteDialogOpen} onOpenChange={setBatchDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认批量删除人员？</AlertDialogTitle>
+            <AlertDialogDescription>
+              此操作将删除选中的 {selectedPersonIds.length} 个人员，该人员与任务的关联也将被移除。此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBatchDeleteConfirm}>删除</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -43,12 +43,40 @@ import {
   Trash2,
   X,
   Pencil,
+  Hourglass,
+  Eye,
+  Loader2,
+  Activity,
+  Search,
+  Wrench,
+  GitBranch,
+  Palette,
+  Code,
+  FlaskConical,
+  RefreshCw,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import type { TaskStatus, TimeRangeFilter, Project } from '../types/task';
-import { timeRangeLabels } from '../constants/taskLabels';
+import { statusLabels, timeRangeLabels } from '../constants/taskLabels';
 import { ProjectDialog } from './ProjectDialog';
+
+// 状态图标映射
+const statusIcons: Record<TaskStatus, React.ElementType> = {
+  todo: Circle,
+  'pending-apply': Hourglass,
+  review: Eye,
+  'in-progress': Loader2,
+  processing: Activity,
+  investigating: Search,
+  fixing: Wrench,
+  'in-flow': GitBranch,
+  designing: Palette,
+  developing: Code,
+  testing: FlaskConical,
+  'pending-change': RefreshCw,
+  completed: CheckCircle2,
+};
 
 interface SidebarProps {
   onCreateProject: () => void;
@@ -66,12 +94,13 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
   const [editProjectDialogOpen, setEditProjectDialogOpen] = useState(false);
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
 
-  const statusCounts = useMemo(() => ({
-    all: tasks.length,
-    todo: tasks.filter(t => t.status === 'todo').length,
-    'in-progress': tasks.filter(t => t.status === 'in-progress').length,
-    completed: tasks.filter(t => t.status === 'completed').length,
-  }), [tasks]);
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: tasks.length };
+    (Object.keys(statusLabels) as TaskStatus[]).forEach(key => {
+      counts[key] = tasks.filter(t => t.status === key).length;
+    });
+    return counts;
+  }, [tasks]);
 
   const handleStatusFilter = (status: TaskStatus | 'all') => {
     updateFilters({ status });
@@ -140,7 +169,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
   return (
     <>
       <div className="w-64 border-r bg-muted/30 flex flex-col h-full overflow-hidden">
-      <div className="shrink-0 p-4 border-b">
+      <div className="shrink-0 p-4 border-b h-16">
         <h1 className="font-semibold text-lg flex items-center gap-2">
           <ListTodo className="w-5 h-5 text-primary" />
           任务管理
@@ -149,58 +178,40 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
 
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-4 space-y-6">
-          {/* 状态筛选 */}
+          {/* 状态筛选 - 紧凑网格布局 */}
           <div>
-            <h2 className="text-sm font-medium mb-2 text-muted-foreground">状态</h2>
-            <div className="space-y-1">
+            <h2 className="text-xs font-medium mb-3 text-muted-foreground">状态</h2>
+            <div className="grid grid-cols-2 gap-1.5">
               <Button
                 variant={filters.status === 'all' ? 'secondary' : 'ghost'}
-                className="w-full justify-start"
+                className="justify-start h-8 text-xs"
                 size="sm"
                 onClick={() => handleStatusFilter('all')}
               >
-                <Circle className="w-4 h-4 mr-2" />
-                全部任务
-                <Badge variant="outline" className="ml-auto">
+                <Circle className="w-3.5 h-3.5 mr-1.5" />
+                <span className="truncate">全部</span>
+                <Badge variant="outline" className="ml-auto text-[10px] h-4 px-1">
                   {statusCounts.all}
                 </Badge>
               </Button>
-              <Button
-                variant={filters.status === 'todo' ? 'secondary' : 'ghost'}
-                className="w-full justify-start"
-                size="sm"
-                onClick={() => handleStatusFilter('todo')}
-              >
-                <ListTodo className="w-4 h-4 mr-2" />
-                待办
-                <Badge variant="outline" className="ml-auto">
-                  {statusCounts.todo}
-                </Badge>
-              </Button>
-              <Button
-                variant={filters.status === 'in-progress' ? 'secondary' : 'ghost'}
-                className="w-full justify-start"
-                size="sm"
-                onClick={() => handleStatusFilter('in-progress')}
-              >
-                <Clock className="w-4 h-4 mr-2" />
-                进行中
-                <Badge variant="outline" className="ml-auto">
-                  {statusCounts['in-progress']}
-                </Badge>
-              </Button>
-              <Button
-                variant={filters.status === 'completed' ? 'secondary' : 'ghost'}
-                className="w-full justify-start"
-                size="sm"
-                onClick={() => handleStatusFilter('completed')}
-              >
-                <CheckCircle2 className="w-4 h-4 mr-2" />
-                已完成
-                <Badge variant="outline" className="ml-auto">
-                  {statusCounts.completed}
-                </Badge>
-              </Button>
+              {(Object.keys(statusLabels) as TaskStatus[]).map(key => {
+                const IconComponent = statusIcons[key];
+                return (
+                  <Button
+                    key={key}
+                    variant={filters.status === key ? 'secondary' : 'ghost'}
+                    className="justify-start h-8 text-xs"
+                    size="sm"
+                    onClick={() => handleStatusFilter(key)}
+                  >
+                    <IconComponent className="w-3.5 h-3.5 mr-1.5" />
+                    <span className="truncate">{statusLabels[key]}</span>
+                    <Badge variant="outline" className="ml-auto text-[10px] h-4 px-1">
+                      {statusCounts[key]}
+                    </Badge>
+                  </Button>
+                );
+              })}
             </div>
           </div>
 
@@ -209,7 +220,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
           {/* 项目分类 */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-medium text-muted-foreground">项目</h2>
+              <h2 className="text-xs font-medium text-muted-foreground">项目</h2>
               <Button
                 variant="ghost"
                 size="sm"
@@ -222,7 +233,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
             <div className="space-y-1">
               <Button
                 variant={filters.projectId === 'all' ? 'secondary' : 'ghost'}
-                className="w-full justify-start"
+                className="w-full justify-start text-xs"
                 size="sm"
                 onClick={() => handleProjectFilter('all')}
               >
@@ -236,7 +247,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
                 >
                   <Button
                     variant={filters.projectId === project.id ? 'secondary' : 'ghost'}
-                    className="flex-1 justify-start"
+                    className="flex-1 justify-start text-xs"
                     size="sm"
                     onClick={() => handleProjectFilter(project.id)}
                   >
@@ -281,7 +292,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
           {/* 标签管理 */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-medium text-muted-foreground">标签</h2>
+              <h2 className="text-xs font-medium text-muted-foreground">标签</h2>
               <Button
                 variant="ghost"
                 size="sm"
@@ -300,7 +311,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
                   >
                     <Badge
                       variant={filters.tags.includes(tag) ? 'default' : 'outline'}
-                      className="cursor-pointer hover:bg-primary/80 pr-1"
+                      className="cursor-pointer hover:bg-primary/80 pr-1 text-xs"
                       onClick={() => handleTagFilter(tag)}
                     >
                       <Tag className="w-3 h-3 mr-1" />
@@ -327,7 +338,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
 
           {/* 时间筛选 */}
           <div>
-            <h2 className="text-sm font-medium mb-2 text-muted-foreground flex items-center gap-2">
+            <h2 className="text-xs font-medium mb-2 text-muted-foreground flex items-center gap-2">
               <CalendarIcon className="w-4 h-4" />
               时间范围
             </h2>
@@ -337,7 +348,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
                 updateFilters({ timeRange: value as TimeRangeFilter })
               }
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -357,7 +368,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
                     <span className="text-xs text-muted-foreground">开始日期</span>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start text-left text-sm h-8">
+                        <Button variant="outline" className="w-full justify-start text-left text-xs h-8">
                           <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                           {filters.customDateStart
                             ? format(new Date(filters.customDateStart), 'MM/dd', { locale: zhCN })
@@ -380,7 +391,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
                     <span className="text-xs text-muted-foreground">结束日期</span>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start text-left text-sm h-8">
+                        <Button variant="outline" className="w-full justify-start text-left text-xs h-8">
                           <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                           {filters.customDateEnd
                             ? format(new Date(filters.customDateEnd), 'MM/dd', { locale: zhCN })

@@ -1,5 +1,18 @@
 export type Priority = 'urgent' | 'high' | 'medium' | 'low';
-export type TaskStatus = 'todo' | 'in-progress' | 'completed';
+export type TaskStatus =
+  | 'todo'
+  | 'pending-apply'
+  | 'review'
+  | 'in-progress'
+  | 'processing'
+  | 'investigating'
+  | 'fixing'
+  | 'in-flow'
+  | 'designing'
+  | 'developing'
+  | 'testing'
+  | 'pending-change'
+  | 'completed';
 
 export interface Person {
   id: string;

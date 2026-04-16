@@ -107,7 +107,7 @@ export function TaskToolbar({
 
   return (
     <TooltipProvider>
-    <div className="border-b bg-background p-4">
+    <div className="border-b bg-background p-4 h-16">
       {/* 移除标签确认对话框 */}
       <AlertDialog open={removeConfirmOpen} onOpenChange={setRemoveConfirmOpen}>
         <AlertDialogContent>
@@ -159,8 +159,8 @@ export function TaskToolbar({
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <div className="shrink-0">
-            <h2 className="text-xl font-semibold whitespace-nowrap">任务列表</h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h2 className="text-lg font-semibold whitespace-nowrap">任务列表</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
               共 {taskCount} 个任务
             </p>
           </div>

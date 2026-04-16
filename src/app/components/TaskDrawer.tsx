@@ -161,15 +161,15 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent className="sm:max-w-[540px] overflow-y-auto">
-        <SheetHeader>
+      <SheetContent className="sm:max-w-[540px] overflow-y-auto px-6">
+        <SheetHeader className="px-0 pt-4">
           <SheetTitle>{isEdit ? '编辑任务' : '创建新任务'}</SheetTitle>
           <SheetDescription>
             {isEdit ? '修改任务详情和进度备注' : '填写任务信息，点击保存创建新任务'}
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 mt-6">
+        <form onSubmit={handleSubmit} className="space-y-5 mt-6">
           {/* 任务标题 */}
           <div className="space-y-2">
             <Label htmlFor="title">任务标题 *</Label>
@@ -245,9 +245,9 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todo">{statusLabels.todo}</SelectItem>
-                  <SelectItem value="in-progress">{statusLabels['in-progress']}</SelectItem>
-                  <SelectItem value="completed">{statusLabels.completed}</SelectItem>
+                  {(Object.keys(statusLabels) as TaskStatus[]).map(key => (
+                    <SelectItem key={key} value={key}>{statusLabels[key]}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -405,9 +405,6 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                       newStatus = 'completed';
                     } else if (value === 0) {
                       newStatus = 'todo';
-                    } else if (value > 0 && value < 100 && prev.status !== 'in-progress') {
-                      // 进度在 1-99 之间时，如果当前状态不是"进行中"，则改为"进行中"
-                      newStatus = 'in-progress';
                     }
                     return { ...prev, progress: value, status: newStatus };
                   });

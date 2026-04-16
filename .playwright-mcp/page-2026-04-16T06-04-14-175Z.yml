@@ -1,0 +1,358 @@
+- generic:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - heading [level=1]:
+            - img
+            - text: 任务管理
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - heading [level=2]: 状态
+                  - generic:
+                    - button:
+                      - img
+                      - text: 全部任务
+                      - generic: "3"
+                    - button:
+                      - img
+                      - text: 待办
+                      - generic: "2"
+                    - button:
+                      - img
+                      - text: 待申请
+                      - generic: "0"
+                    - button:
+                      - img
+                      - text: 评审
+                      - generic: "0"
+                    - button:
+                      - img
+                      - text: 进行中
+                      - generic: "1"
+                    - button:
+                      - img
+                      - text: 处理中
+                      - generic: "0"
+                    - button:
+                      - img
+                      - text: 排查中
+                      - generic: "0"
+                    - button:
+                      - img
+                      - text: 修复中
+                      - generic: "0"
+                    - button:
+                      - img
+                      - text: 流程中
+                      - generic: "0"
+                    - button:
+                      - img
+                      - text: 设计中
+                      - generic: "0"
+                    - button:
+                      - img
+                      - text: 开发中
+                      - generic: "0"
+                    - button:
+                      - img
+                      - text: 测试中
+                      - generic: "0"
+                    - button:
+                      - img
+                      - text: 待变更
+                      - generic: "0"
+                    - button:
+                      - img
+                      - text: 已修复
+                      - generic: "0"
+                    - button:
+                      - img
+                      - text: 已完成
+                      - generic: "0"
+                    - button:
+                      - img
+                      - text: 已结束
+                      - generic: "0"
+                - generic:
+                  - generic:
+                    - heading [level=2]: 项目
+                    - button:
+                      - img
+                  - generic:
+                    - button:
+                      - img
+                      - text: 全部项目
+                    - generic:
+                      - button:
+                        - generic: 工作项目
+                        - generic: "2"
+                      - button:
+                        - img
+                    - generic:
+                      - button:
+                        - generic: 个人事务
+                        - generic: "0"
+                      - button:
+                        - img
+                    - generic:
+                      - button:
+                        - generic: 学习计划
+                        - generic: "1"
+                      - button:
+                        - img
+                - generic:
+                  - generic:
+                    - heading [level=2]: 标签
+                    - button:
+                      - img
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                        - text: 会议
+                      - button:
+                        - img
+                    - generic:
+                      - generic:
+                        - img
+                        - text: 前端
+                      - button:
+                        - img
+                    - generic:
+                      - generic:
+                        - img
+                        - text: 学习
+                      - button:
+                        - img
+                    - generic:
+                      - generic:
+                        - img
+                        - text: 设计
+                      - button:
+                        - img
+                    - generic:
+                      - generic:
+                        - img
+                        - text: 重要
+                      - button:
+                        - img
+                - generic:
+                  - heading [level=2]:
+                    - img
+                    - text: 时间范围
+                  - combobox:
+                    - generic: 全部时间
+                    - img
+        - generic:
+          - button:
+            - img
+            - text: 人员管理
+            - generic: "2"
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - heading [level=2]: 任务列表
+                - paragraph: 共 3 个任务
+              - generic:
+                - img
+                - textbox:
+                  - /placeholder: 搜索任务...
+            - generic:
+              - combobox:
+                - img
+                - img
+              - combobox:
+                - img
+                - img
+              - button:
+                - img
+                - text: 创建任务
+              - button:
+                - img
+              - button:
+                - img
+        - generic:
+          - generic:
+            - generic:
+              - checkbox
+              - generic: 全选
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - checkbox
+                    - button
+                    - generic:
+                      - generic:
+                        - generic: 准备周会汇报材料
+                        - button:
+                          - img
+                      - generic:
+                        - generic: 工作项目
+                        - generic:
+                          - img
+                          - text: 待办
+                        - generic: 中
+                        - generic:
+                          - img
+                          - text: 04/23
+                        - generic:
+                          - img
+                          - text: 会议
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - checkbox
+                    - button
+                    - generic:
+                      - generic:
+                        - generic: 完成项目方案设计
+                        - button:
+                          - img
+                      - generic:
+                        - generic: 工作项目
+                        - generic:
+                          - img
+                          - text: 进行中
+                        - generic: 高
+                        - generic: 70%
+                        - generic:
+                          - img
+                          - text: 张三
+                        - generic:
+                          - img
+                          - text: 04/17
+                        - generic:
+                          - img
+                          - text: 设计
+                        - generic:
+                          - img
+                          - text: 重要
+                      - generic:
+                        - img
+                        - generic: 李四
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - checkbox
+                    - button
+                    - generic:
+                      - generic:
+                        - generic: 学习 React 新特性
+                        - button:
+                          - img
+                      - generic:
+                        - generic: 学习计划
+                        - generic:
+                          - img
+                          - text: 待办
+                        - generic: 低
+                        - generic: 20%
+                        - generic:
+                          - img
+                          - text: 学习
+                        - generic:
+                          - img
+                          - text: 前端
+          - generic:
+            - button [disabled]:
+              - img
+            - generic:
+              - button: "1"
+            - button [disabled]:
+              - img
+            - button: 全部
+            - generic: 共 3 条
+  - dialog "创建新任务" [ref=e338]:
+    - generic [ref=e339]:
+      - heading "创建新任务" [level=2] [ref=e340]
+      - paragraph [ref=e341]: 填写任务信息，点击保存创建新任务
+    - generic [ref=e342]:
+      - generic [ref=e343]:
+        - generic [ref=e344]: 任务标题 *
+        - textbox "任务标题 *" [active] [ref=e345]:
+          - /placeholder: 输入任务标题...
+      - generic [ref=e346]:
+        - generic [ref=e347]: 任务描述
+        - textbox "任务描述" [ref=e348]:
+          - /placeholder: 详细描述任务内容...
+      - generic [ref=e349]:
+        - generic [ref=e350]:
+          - generic [ref=e351]: 所属项目
+          - combobox [ref=e352]:
+            - generic:
+              - generic: 工作项目
+            - img
+          - combobox [ref=e353]
+        - generic [ref=e354]:
+          - generic [ref=e355]: 状态
+          - combobox [ref=e356]:
+            - generic: 待办
+            - img
+          - combobox [ref=e357]
+      - generic [ref=e358]:
+        - generic [ref=e359]:
+          - generic [ref=e360]: 优先级
+          - combobox [ref=e361]:
+            - generic:
+              - generic: 中
+            - img
+          - combobox [ref=e362]
+        - generic [ref=e363]:
+          - generic [ref=e364]: 截止日期
+          - button "选择日期" [ref=e365]:
+            - img
+            - generic [ref=e366]: 选择日期
+      - generic [ref=e367]:
+        - generic [ref=e368]: 标签
+        - generic [ref=e369]:
+          - textbox "添加标签..." [ref=e370]
+          - button [ref=e371]:
+            - img
+        - generic [ref=e372]:
+          - generic [ref=e373] [cursor=pointer]: 会议
+          - generic [ref=e374] [cursor=pointer]: 前端
+          - generic [ref=e375] [cursor=pointer]: 学习
+          - generic [ref=e376] [cursor=pointer]: 设计
+          - generic [ref=e377] [cursor=pointer]: 重要
+      - generic [ref=e378]:
+        - generic [ref=e379]:
+          - generic [ref=e380]: 进度
+          - generic [ref=e381]: 0%
+        - slider [ref=e386]
+        - generic [ref=e387]:
+          - generic [ref=e388]: 未开始
+          - generic [ref=e389]: 已完成
+      - generic [ref=e390]:
+        - generic [ref=e391]:
+          - img [ref=e392]
+          - text: 负责人
+        - combobox [ref=e395]:
+          - generic [ref=e396]: 选择负责人
+          - img
+      - generic [ref=e397]:
+        - generic [ref=e398]:
+          - img [ref=e399]
+          - text: 关联人
+        - combobox [ref=e404]:
+          - generic [ref=e405]: 选择关联人
+          - img
+      - generic [ref=e406]:
+        - generic [ref=e407]: 进度备注
+        - textbox "进度备注" [ref=e408]:
+          - /placeholder: 记录任务进展、遇到的问题等...
+      - generic [ref=e409]:
+        - button "创建任务" [ref=e410]
+        - button "取消" [ref=e411]
+    - button "Close" [ref=e412]:
+      - img [ref=e413]
+      - generic [ref=e416]: Close

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useTaskContext } from '../context/TaskContext';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
 import {
   Dialog,
   DialogContent,
@@ -9,7 +10,8 @@ import {
   DialogTitle,
 } from './ui/dialog';
 import { Separator } from './ui/separator';
-import { Download, Upload, AlertCircle } from 'lucide-react';
+import { Download, Upload, AlertCircle, Folder } from 'lucide-react';
+import { save } from '@tauri-apps/plugin-dialog';
 
 interface DataManagerProps {
   open: boolean;
@@ -19,19 +21,45 @@ interface DataManagerProps {
 export function DataManager({ open, onClose }: DataManagerProps) {
   const { exportData, importData } = useTaskContext();
   const [importMessage, setImportMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [exportPath, setExportPath] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleExport = () => {
+  const isTauri = () => '__TAURI__' in window;
+
+  const handleExport = async () => {
     const data = exportData();
     const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `todo-backup-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+
+    if (isTauri()) {
+      // Tauri 环境：使用 dialog 选择保存路径
+      const fileName = `todo-backup-${new Date().toISOString().split('T')[0]}.json`;
+      try {
+        const filePath = await save({
+          defaultPath: fileName,
+          filters: [
+            { name: 'JSON', extensions: ['json'] },
+          ],
+        });
+        if (filePath) {
+          const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+          await writeTextFile(filePath, data);
+          setExportPath(filePath);
+          setTimeout(() => setExportPath(''), 3000);
+        }
+      } catch (error) {
+        console.error('导出失败:', error);
+      }
+    } else {
+      // Web 环境：使用传统下载方式
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `todo-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   };
 
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,6 +110,15 @@ export function DataManager({ open, onClose }: DataManagerProps) {
               <Download className="w-4 h-4 mr-2" />
               导出数据
             </Button>
+            {exportPath && (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200">
+                <Folder className="w-4 h-4 mt-0.5 shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium">导出成功</p>
+                  <p className="text-xs opacity-80">{exportPath}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           <Separator />

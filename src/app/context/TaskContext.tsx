@@ -5,7 +5,9 @@ import {
   FilterOptions,
   Person,
   getTimeRangeBounds,
+  TaskStatus,
 } from '../types/task';
+import { statusLabels } from '../constants/taskLabels';
 import { readData, writeData, migrateFromLocalStorage, StorageData } from '../services/storage';
 
 interface TaskContextType {
@@ -625,12 +627,6 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       let report = `# 任务报告\n\n`;
       report += `**任务统计**: 共 ${reportTasks.length} 个任务\n\n`;
 
-      const statusLabels = {
-        todo: '待办',
-        'in-progress': '进行中',
-        completed: '已完成',
-      };
-
       const priorityLabels = {
         urgent: '紧急',
         high: '高',
@@ -638,25 +634,33 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         low: '低',
       };
 
-      const statusOrder = { completed: 0, 'in-progress': 1, todo: 2 };
+      // 状态排序顺序（按显示顺序）
+      const statusOrderList: TaskStatus[] = [
+        'todo', 'pending-apply', 'review', 'in-progress', 'processing',
+        'investigating', 'fixing', 'in-flow', 'designing', 'developing',
+        'testing', 'pending-change', 'completed'
+      ];
+      const statusOrderMap = Object.fromEntries(statusOrderList.map((s, i) => [s, i]));
 
       sortedProjectGroups.forEach(([projectName, { tasks: projectTasks }]) => {
         report += `## ${projectName}\n\n`;
 
-        // 按状态排序：已完成 -> 进行中(按进度降序) -> 待办(按截止时间升序)
+        // 已完成 → 有进度（降序） → 无进度
         const sortedTasks = [...projectTasks].sort((a, b) => {
-          if (a.status !== b.status) {
-            return statusOrder[a.status] - statusOrder[b.status];
-          }
-          if (a.status === 'in-progress') {
-            return b.progress - a.progress;
-          }
-          if (a.status === 'todo') {
-            const aDate = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
-            const bDate = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
-            return aDate - bDate;
-          }
-          return 0;
+          // 1. 已完成优先
+          const aCompleted = a.status === 'completed' ? 0 : 1;
+          const bCompleted = b.status === 'completed' ? 0 : 1;
+          if (aCompleted !== bCompleted) return aCompleted - bCompleted;
+          // 2. 有进度的排在无进度前面
+          const aHasProgress = a.progress > 0 ? 0 : 1;
+          const bHasProgress = b.progress > 0 ? 0 : 1;
+          if (aHasProgress !== bHasProgress) return aHasProgress - bHasProgress;
+          // 3. 按进度降序
+          if (a.progress !== b.progress) return b.progress - a.progress;
+          // 4. 同进度按状态排序
+          const aOrder = statusOrderMap[a.status] ?? 99;
+          const bOrder = statusOrderMap[b.status] ?? 99;
+          return aOrder - bOrder;
         });
 
         sortedTasks.forEach(task => {
@@ -672,8 +676,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           if (task.progress > 0) {
             report += `- 进度：${task.progress}%\n`;
           }
-          // 只有进行中和待办状态才显示截止时间
-          if (task.dueDate && (task.status === 'in-progress' || task.status === 'todo')) {
+          // 未结束的任务显示截止时间
+          if (task.dueDate && task.status !== 'completed') {
             report += `- 截止日期：${formatDate(new Date(task.dueDate))}\n`;
           }
           if (task.priority !== 'medium') {

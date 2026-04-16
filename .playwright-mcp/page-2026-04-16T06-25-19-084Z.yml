@@ -1,0 +1,254 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - heading "任务管理" [level=1] [ref=e6]:
+      - img [ref=e7]
+      - text: 任务管理
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - heading "状态" [level=2] [ref=e15]
+        - generic [ref=e16]:
+          - button "全部 3" [ref=e17]:
+            - img
+            - generic [ref=e18]: 全部
+            - generic [ref=e19]: "3"
+          - button "待办 2" [ref=e20]:
+            - img
+            - generic [ref=e21]: 待办
+            - generic [ref=e22]: "2"
+          - button "待申请 0" [ref=e23]:
+            - img
+            - generic [ref=e24]: 待申请
+            - generic [ref=e25]: "0"
+          - button "评审 0" [ref=e26]:
+            - img
+            - generic [ref=e27]: 评审
+            - generic [ref=e28]: "0"
+          - button "进行中 1" [ref=e29]:
+            - img
+            - generic [ref=e30]: 进行中
+            - generic [ref=e31]: "1"
+          - button "处理中 0" [ref=e32]:
+            - img
+            - generic [ref=e33]: 处理中
+            - generic [ref=e34]: "0"
+          - button "排查中 0" [ref=e35]:
+            - img
+            - generic [ref=e36]: 排查中
+            - generic [ref=e37]: "0"
+          - button "修复中 0" [ref=e38]:
+            - img
+            - generic [ref=e39]: 修复中
+            - generic [ref=e40]: "0"
+          - button "流程中 0" [ref=e41]:
+            - img
+            - generic [ref=e42]: 流程中
+            - generic [ref=e43]: "0"
+          - button "设计中 0" [ref=e44]:
+            - img
+            - generic [ref=e45]: 设计中
+            - generic [ref=e46]: "0"
+          - button "开发中 0" [ref=e47]:
+            - img
+            - generic [ref=e48]: 开发中
+            - generic [ref=e49]: "0"
+          - button "测试中 0" [ref=e50]:
+            - img
+            - generic [ref=e51]: 测试中
+            - generic [ref=e52]: "0"
+          - button "待变更 0" [ref=e53]:
+            - img
+            - generic [ref=e54]: 待变更
+            - generic [ref=e55]: "0"
+          - button "已修复 0" [ref=e56]:
+            - img
+            - generic [ref=e57]: 已修复
+            - generic [ref=e58]: "0"
+          - button "已完成 0" [ref=e59]:
+            - img
+            - generic [ref=e60]: 已完成
+            - generic [ref=e61]: "0"
+          - button "已结束 0" [ref=e62]:
+            - img
+            - generic [ref=e63]: 已结束
+            - generic [ref=e64]: "0"
+      - generic [ref=e65]:
+        - generic [ref=e66]:
+          - heading "项目" [level=2] [ref=e67]
+          - button [ref=e68]:
+            - img
+        - generic [ref=e69]:
+          - button "全部项目" [ref=e70]:
+            - img
+            - text: 全部项目
+          - generic [ref=e71]:
+            - button "工作项目 2" [ref=e72]:
+              - generic [ref=e74]: 工作项目
+              - generic [ref=e75]: "2"
+            - button [ref=e76]:
+              - img
+          - generic [ref=e77]:
+            - button "个人事务 0" [ref=e78]:
+              - generic [ref=e80]: 个人事务
+              - generic [ref=e81]: "0"
+            - button [ref=e82]:
+              - img
+          - generic [ref=e83]:
+            - button "学习计划 1" [ref=e84]:
+              - generic [ref=e86]: 学习计划
+              - generic [ref=e87]: "1"
+            - button [ref=e88]:
+              - img
+      - generic [ref=e89]:
+        - generic [ref=e90]:
+          - heading "标签" [level=2] [ref=e91]
+          - button [ref=e92]:
+            - img
+        - generic [ref=e93]:
+          - generic [ref=e94]:
+            - generic [ref=e95] [cursor=pointer]:
+              - img [ref=e96]
+              - text: 会议
+            - button [ref=e99]:
+              - img [ref=e100]
+          - generic [ref=e103]:
+            - generic [ref=e104] [cursor=pointer]:
+              - img [ref=e105]
+              - text: 前端
+            - button [ref=e108]:
+              - img [ref=e109]
+          - generic [ref=e112]:
+            - generic [ref=e113] [cursor=pointer]:
+              - img [ref=e114]
+              - text: 学习
+            - button [ref=e117]:
+              - img [ref=e118]
+          - generic [ref=e121]:
+            - generic [ref=e122] [cursor=pointer]:
+              - img [ref=e123]
+              - text: 设计
+            - button [ref=e126]:
+              - img [ref=e127]
+          - generic [ref=e130]:
+            - generic [ref=e131] [cursor=pointer]:
+              - img [ref=e132]
+              - text: 重要
+            - button [ref=e135]:
+              - img [ref=e136]
+      - generic [ref=e139]:
+        - heading "时间范围" [level=2] [ref=e140]:
+          - img [ref=e141]
+          - text: 时间范围
+        - combobox [ref=e143]:
+          - generic: 全部时间
+          - img
+    - button "人员管理 2" [ref=e145]:
+      - img
+      - text: 人员管理
+      - generic [ref=e146]: "2"
+  - generic [ref=e147]:
+    - generic [ref=e149]:
+      - generic [ref=e150]:
+        - generic [ref=e151]:
+          - heading "任务列表" [level=2] [ref=e152]
+          - paragraph [ref=e153]: 共 3 个任务
+        - generic [ref=e154]:
+          - img [ref=e155]
+          - textbox "搜索任务..." [ref=e158]
+      - generic [ref=e159]:
+        - combobox [ref=e160]:
+          - img
+          - img
+        - combobox [ref=e161]:
+          - img
+          - img
+        - button "创建任务" [ref=e162]:
+          - img
+          - text: 创建任务
+        - button [ref=e163]:
+          - img
+        - button [ref=e164]:
+          - img
+    - generic [ref=e165]:
+      - generic [ref=e167]:
+        - checkbox "全选" [ref=e168]
+        - generic [ref=e169] [cursor=pointer]: 全选
+      - generic [ref=e170]:
+        - generic [ref=e174]:
+          - checkbox [ref=e175]
+          - button "标记为完成" [ref=e176]
+          - generic [ref=e177]:
+            - generic [ref=e178]:
+              - generic [ref=e179] [cursor=pointer]: 准备周会汇报材料
+              - button [ref=e180]:
+                - img
+            - generic [ref=e181]:
+              - generic [ref=e182]: 工作项目
+              - generic [ref=e184]:
+                - img [ref=e185]
+                - text: 待办
+              - generic [ref=e188]: 中
+              - generic [ref=e189]:
+                - img [ref=e190]
+                - text: 04/23
+              - generic [ref=e192]:
+                - img [ref=e193]
+                - text: 会议
+        - generic [ref=e199]:
+          - checkbox [ref=e200]
+          - button "标记为完成" [ref=e201]
+          - generic [ref=e202]:
+            - generic [ref=e203]:
+              - generic [ref=e204] [cursor=pointer]: 完成项目方案设计
+              - button [ref=e205]:
+                - img
+            - generic [ref=e206]:
+              - generic [ref=e207]: 工作项目
+              - generic [ref=e209]:
+                - img [ref=e210]
+                - text: 进行中
+              - generic [ref=e213]: 高
+              - generic [ref=e214]: 70%
+              - generic [ref=e217]:
+                - img [ref=e218]
+                - text: 张三
+              - generic [ref=e221]:
+                - img [ref=e222]
+                - text: 04/17
+              - generic [ref=e224]:
+                - img [ref=e225]
+                - text: 设计
+              - generic [ref=e228]:
+                - img [ref=e229]
+                - text: 重要
+            - generic [ref=e232]:
+              - img [ref=e233]
+              - generic [ref=e238]: 李四
+        - generic [ref=e242]:
+          - checkbox [ref=e243]
+          - button "标记为完成" [ref=e244]
+          - generic [ref=e245]:
+            - generic [ref=e246]:
+              - generic [ref=e247] [cursor=pointer]: 学习 React 新特性
+              - button [ref=e248]:
+                - img
+            - generic [ref=e249]:
+              - generic [ref=e250]: 学习计划
+              - generic [ref=e252]:
+                - img [ref=e253]
+                - text: 待办
+              - generic [ref=e256]: 低
+              - generic [ref=e257]: 20%
+              - generic [ref=e260]:
+                - img [ref=e261]
+                - text: 学习
+              - generic [ref=e264]:
+                - img [ref=e265]
+                - text: 前端
+      - generic [ref=e268]:
+        - button [disabled]:
+          - img
+        - button "1" [ref=e270]
+        - button [disabled]:
+          - img
+        - button "全部" [ref=e271]
+        - generic [ref=e272]: 共 3 条

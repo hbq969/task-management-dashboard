@@ -5,6 +5,22 @@ export const priorityColors = {
   low: 'success',
 } as const;
 
+export const statusColors = {
+  todo: 'outline',
+  'pending-apply': 'outline',
+  review: 'secondary',
+  'in-progress': 'secondary',
+  processing: 'secondary',
+  investigating: 'warning',
+  fixing: 'warning',
+  'in-flow': 'secondary',
+  designing: 'info',
+  developing: 'info',
+  testing: 'info',
+  'pending-change': 'warning',
+  completed: 'default',
+} as const;
+
 export const priorityLabels = {
   urgent: '紧急',
   high: '高',
@@ -14,7 +30,17 @@ export const priorityLabels = {
 
 export const statusLabels = {
   todo: '待办',
+  'pending-apply': '待申请',
+  review: '评审',
   'in-progress': '进行中',
+  processing: '处理中',
+  investigating: '排查中',
+  fixing: '修复中',
+  'in-flow': '流程中',
+  designing: '设计中',
+  developing: '开发中',
+  testing: '测试中',
+  'pending-change': '待变更',
   completed: '已完成',
 };
 
