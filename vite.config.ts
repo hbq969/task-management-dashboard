@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 import { viteSingleFile } from 'vite-plugin-singlefile'
 
 export default defineConfig({
+  base: process.env.GITHUB_PAGES ? '/task-management-dashboard/' : '/',
   plugins: [
     react(),
     tailwindcss(),
