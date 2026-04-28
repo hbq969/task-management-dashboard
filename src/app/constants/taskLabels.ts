@@ -42,7 +42,14 @@ export const statusLabels = {
   testing: '测试中',
   'pending-change': '待变更',
   completed: '已完成',
-};
+} as const;
+
+// 筛选状态标签（包含"未完成"特殊筛选）
+export const filterStatusLabels = {
+  all: '全部',
+  incomplete: '未完成',
+  ...statusLabels,
+} as const;
 
 export const timeRangeLabels = {
   all: '全部时间',

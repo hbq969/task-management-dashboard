@@ -62,7 +62,7 @@ export type TimeRangeFilter =
   | 'custom';
 
 export interface FilterOptions {
-  status: TaskStatus | 'all';
+  status: TaskStatus | 'all' | 'incomplete';
   priority: Priority | 'all';
   projectId: string | 'all';
   tags: string[];

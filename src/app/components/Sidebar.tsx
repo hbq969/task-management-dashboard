@@ -54,11 +54,12 @@ import {
   Code,
   FlaskConical,
   RefreshCw,
+  CircleDot,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import type { TaskStatus, TimeRangeFilter, Project } from '../types/task';
-import { statusLabels, timeRangeLabels } from '../constants/taskLabels';
+import { statusLabels, timeRangeLabels, filterStatusLabels } from '../constants/taskLabels';
 import { ProjectDialog } from './ProjectDialog';
 
 // 状态图标映射
@@ -99,10 +100,12 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
     (Object.keys(statusLabels) as TaskStatus[]).forEach(key => {
       counts[key] = tasks.filter(t => t.status === key).length;
     });
+    // 添加"未完成"计数（排除已完成）
+    counts.incomplete = tasks.filter(t => t.status !== 'completed').length;
     return counts;
   }, [tasks]);
 
-  const handleStatusFilter = (status: TaskStatus | 'all') => {
+  const handleStatusFilter = (status: TaskStatus | 'all' | 'incomplete') => {
     updateFilters({ status });
   };
 
@@ -189,9 +192,21 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
                 onClick={() => handleStatusFilter('all')}
               >
                 <Circle className="w-3.5 h-3.5 mr-1.5" />
-                <span className="truncate">全部</span>
+                <span className="truncate">{filterStatusLabels.all}</span>
                 <Badge variant="outline" className="ml-auto text-[10px] h-4 px-1">
                   {statusCounts.all}
+                </Badge>
+              </Button>
+              <Button
+                variant={filters.status === 'incomplete' ? 'secondary' : 'ghost'}
+                className="justify-start h-8 text-xs"
+                size="sm"
+                onClick={() => handleStatusFilter('incomplete')}
+              >
+                <CircleDot className="w-3.5 h-3.5 mr-1.5" />
+                <span className="truncate">{filterStatusLabels.incomplete}</span>
+                <Badge variant="outline" className="ml-auto text-[10px] h-4 px-1">
+                  {statusCounts.incomplete}
                 </Badge>
               </Button>
               {(Object.keys(statusLabels) as TaskStatus[]).map(key => {
