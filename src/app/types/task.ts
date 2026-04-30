@@ -38,6 +38,7 @@ export interface Task {
   updatedAt: string;
   notes: string;
   progress: number; // 0-100, default 0
+  exportDescription?: boolean; // 是否导出描述到报告，默认 false
   assigneeId?: string; // Person ID
   relatedPersonIds: string[]; // Related persons IDs
 }

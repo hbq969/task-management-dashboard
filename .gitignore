@@ -31,3 +31,8 @@ src-tauri/Cargo.lock
 
 # Claude Code
 .claude/
+.omc
+.github
+.playwright-mcp
+dist
+graphify-out

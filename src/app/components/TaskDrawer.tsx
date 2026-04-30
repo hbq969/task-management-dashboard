@@ -52,6 +52,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
     progress: 0,
     assigneeId: '' as string,
     relatedPersonIds: [] as string[],
+    exportDescription: false,
   });
 
   const [tagInput, setTagInput] = useState('');
@@ -85,6 +86,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
         progress: task.progress ?? 0,
         assigneeId: task.assigneeId || '',
         relatedPersonIds: task.relatedPersonIds ?? [],
+        exportDescription: task.exportDescription ?? false,
       });
     } else {
       setFormData({
@@ -99,6 +101,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
         progress: 0,
         assigneeId: '',
         relatedPersonIds: [],
+        exportDescription: false,
       });
     }
     setTagInput('');
@@ -121,6 +124,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
       progress: formData.progress,
       assigneeId: formData.assigneeId || undefined,
       relatedPersonIds: formData.relatedPersonIds,
+      exportDescription: formData.exportDescription,
     };
 
     if (isEdit) {
@@ -194,6 +198,20 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
               }
               rows={4}
             />
+          </div>
+
+          {/* 导出描述到报告 */}
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="exportDescription"
+              checked={formData.exportDescription}
+              onCheckedChange={(checked) =>
+                setFormData(prev => ({ ...prev, exportDescription: checked === true }))
+              }
+            />
+            <Label htmlFor="exportDescription" className="cursor-pointer text-sm">
+              导出描述到报告
+            </Label>
           </div>
 
           {/* 项目和状态 */}

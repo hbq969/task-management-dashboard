@@ -62,10 +62,24 @@ const markdownToPlainText = (md: string): string => {
     if (line.startsWith('### ')) {
       taskIndex++;
       const taskName = line.replace(/^###\s+/, '').replace(/\*\*/g, '');
-      // 查找后续的状态和进度信息
+
+      // 收集描述行（以空格开头但不以 '- ' 开头的缩进行）
+      const descriptions: string[] = [];
+      let j = i + 1;
+      while (j < lines.length) {
+        const rawLine = lines[j];
+        if (rawLine.startsWith('  ') && !rawLine.trim().startsWith('- ')) {
+          descriptions.push(rawLine.trim());
+          j++;
+        } else {
+          break;
+        }
+      }
+
+      // 收集状态和进度信息
       let status = '';
       let progress = '';
-      for (let j = i + 1; j < lines.length && lines[j].trim().startsWith('- '); j++) {
+      for (; j < lines.length && lines[j].trim().startsWith('- '); j++) {
         const detail = lines[j].trim();
         if (detail.includes('状态：')) {
           status = detail.replace(/- 状态：/, '').trim();
@@ -74,6 +88,7 @@ const markdownToPlainText = (md: string): string => {
           progress = detail.replace(/- 进度：/, '').trim();
         }
       }
+
       // 构建任务行
       let taskLine = `${taskIndex}. ${taskName}`;
       const details: string[] = [];
@@ -83,6 +98,12 @@ const markdownToPlainText = (md: string): string => {
         taskLine += `（${details.join('，')}）`;
       }
       result.push(taskLine);
+
+      // 输出描述行
+      for (const desc of descriptions) {
+        result.push(`  ${desc}`);
+      }
+
       continue;
     }
   }

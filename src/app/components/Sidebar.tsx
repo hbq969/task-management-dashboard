@@ -55,6 +55,7 @@ import {
   FlaskConical,
   RefreshCw,
   CircleDot,
+  CircleDashed,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -64,7 +65,7 @@ import { ProjectDialog } from './ProjectDialog';
 
 // 状态图标映射
 const statusIcons: Record<TaskStatus, React.ElementType> = {
-  todo: Circle,
+  todo: CircleDashed,
   'pending-apply': Hourglass,
   review: Eye,
   'in-progress': Loader2,
@@ -77,6 +78,23 @@ const statusIcons: Record<TaskStatus, React.ElementType> = {
   testing: FlaskConical,
   'pending-change': RefreshCw,
   completed: CheckCircle2,
+};
+
+// 状态图标颜色映射
+const statusIconColors: Record<TaskStatus, string> = {
+  todo: 'text-slate-400',
+  'pending-apply': 'text-slate-400',
+  review: 'text-blue-500',
+  'in-progress': 'text-blue-500',
+  processing: 'text-sky-500',
+  investigating: 'text-amber-500',
+  fixing: 'text-red-500',
+  'in-flow': 'text-indigo-500',
+  designing: 'text-purple-500',
+  developing: 'text-indigo-500',
+  testing: 'text-teal-500',
+  'pending-change': 'text-orange-500',
+  completed: 'text-green-500',
 };
 
 interface SidebarProps {
@@ -187,25 +205,25 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
             <div className="grid grid-cols-2 gap-1.5">
               <Button
                 variant={filters.status === 'all' ? 'secondary' : 'ghost'}
-                className="justify-start h-8 text-xs"
+                className="grid grid-cols-[20px_1fr_28px] items-center h-8 text-xs w-full"
                 size="sm"
                 onClick={() => handleStatusFilter('all')}
               >
-                <Circle className="w-3.5 h-3.5 mr-1.5" />
-                <span className="truncate">{filterStatusLabels.all}</span>
-                <Badge variant="outline" className="ml-auto text-[10px] h-4 px-1">
+                <Circle className="w-3.5 h-3.5 justify-self-center text-muted-foreground" />
+                <span className="text-left">{filterStatusLabels.all}</span>
+                <Badge variant="outline" className="text-[10px] h-4 px-1 justify-self-center">
                   {statusCounts.all}
                 </Badge>
               </Button>
               <Button
                 variant={filters.status === 'incomplete' ? 'secondary' : 'ghost'}
-                className="justify-start h-8 text-xs"
+                className="grid grid-cols-[20px_1fr_28px] items-center h-8 text-xs w-full"
                 size="sm"
                 onClick={() => handleStatusFilter('incomplete')}
               >
-                <CircleDot className="w-3.5 h-3.5 mr-1.5" />
-                <span className="truncate">{filterStatusLabels.incomplete}</span>
-                <Badge variant="outline" className="ml-auto text-[10px] h-4 px-1">
+                <CircleDot className="w-3.5 h-3.5 justify-self-center text-amber-500" />
+                <span className="text-left">{filterStatusLabels.incomplete}</span>
+                <Badge variant="outline" className="text-[10px] h-4 px-1 justify-self-center">
                   {statusCounts.incomplete}
                 </Badge>
               </Button>
@@ -215,13 +233,13 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
                   <Button
                     key={key}
                     variant={filters.status === key ? 'secondary' : 'ghost'}
-                    className="justify-start h-8 text-xs"
+                    className="grid grid-cols-[20px_1fr_28px] items-center h-8 text-xs w-full"
                     size="sm"
                     onClick={() => handleStatusFilter(key)}
                   >
-                    <IconComponent className="w-3.5 h-3.5 mr-1.5" />
-                    <span className="truncate">{statusLabels[key]}</span>
-                    <Badge variant="outline" className="ml-auto text-[10px] h-4 px-1">
+                    <IconComponent className={`w-3.5 h-3.5 justify-self-center ${statusIconColors[key]}`} />
+                    <span className="text-left">{statusLabels[key]}</span>
+                    <Badge variant="outline" className="text-[10px] h-4 px-1 justify-self-center">
                       {statusCounts[key]}
                     </Badge>
                   </Button>

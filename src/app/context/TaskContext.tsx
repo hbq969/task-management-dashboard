@@ -671,6 +671,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
             : undefined;
 
           report += `### ${task.title}\n`;
+          if (task.exportDescription && task.description?.trim()) {
+            const descLines = task.description.trim().split('\n');
+            descLines.forEach(line => {
+              report += `  ${line}\n`;
+            });
+          }
           report += `- 状态：${statusLabels[task.status]}\n`;
           if (assignee) {
             report += `- 负责人：${assignee}\n`;
