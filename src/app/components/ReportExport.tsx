@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTaskContext } from '../context/TaskContext';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
@@ -9,15 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
-import { Separator } from './ui/separator';
 import { FileText, Copy, Check, X } from 'lucide-react';
 
 interface ReportExportProps {
   open: boolean;
   onClose: () => void;
 }
-
-type ExportFormat = 'markdown' | 'plaintext';
 
 const markdownToPlainText = (md: string): string => {
   const lines = md.split('\n');
@@ -123,6 +120,11 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
     setReport(generatedReport);
   };
 
+  // 标签变化时自动生成报告
+  useEffect(() => {
+    handleGenerateReport();
+  }, [filterTags]);
+
   const handleToggleTag = (tag: string) => {
     setFilterTags(prev =>
       prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
@@ -146,7 +148,7 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[80vh] flex flex-col">
+      <DialogContent className="flex flex-col" style={{ width: 900, maxWidth: 900, height: 650 }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
@@ -155,99 +157,91 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
           <DialogDescription>生成任务报告并导出</DialogDescription>
         </DialogHeader>
 
-        {/* 表单区域 - 固定高度 */}
-        <div className="space-y-4 mt-4 flex-shrink-0">
-          <div className="flex items-end gap-4">
-            <Button onClick={handleGenerateReport}>生成报告</Button>
-          </div>
-
-          {/* 标签筛选 */}
-          <div className="space-y-2">
-            <Label>标签筛选（可选）</Label>
-            <div className="flex flex-wrap gap-1">
-              {allTags.map(tag => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => handleToggleTag(tag)}
-                  className={`px-2 py-1 text-xs rounded-md border transition-colors ${
-                    filterTags.includes(tag)
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background hover:bg-muted'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
+        <div className="grid grid-cols-[220px_1fr] gap-4 min-h-0 flex-1 mt-4">
+          {/* 左侧控制区 */}
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-2">
+              <Button onClick={handleGenerateReport} className="flex-1">生成报告</Button>
+              {report && (
+                <Button onClick={handleCopy} variant="outline" className="flex-1">
+                  {copied ? (
+                    <>
+                      <Check className="w-4 h-4 mr-1" />
+                      已复制
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 mr-1" />
+                      复制
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
-            {filterTags.length > 0 && (
-              <div className="flex items-center gap-1 mt-2">
-                <span className="text-xs text-muted-foreground">已选择：</span>
-                {filterTags.map(tag => (
-                  <span
+
+            {/* 标签筛选 */}
+            <div className="space-y-2">
+              <Label>标签筛选（可选）</Label>
+              <div className="flex flex-wrap gap-1">
+                {allTags.map(tag => (
+                  <button
                     key={tag}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-primary/10 text-primary rounded"
+                    type="button"
+                    onClick={() => handleToggleTag(tag)}
+                    className={`px-2 py-1 text-xs rounded-md border transition-colors ${
+                      filterTags.includes(tag)
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background hover:bg-muted'
+                    }`}
                   >
                     {tag}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTag(tag)}
-                      className="hover:text-primary/80"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
+                  </button>
                 ))}
+              </div>
+              {filterTags.length > 0 && (
+                <div className="flex flex-col gap-1 mt-2">
+                  <span className="text-sm text-muted-foreground">已选择：</span>
+                  <div className="flex flex-wrap gap-1">
+                    {filterTags.map(tag => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-primary/10 text-primary rounded"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(tag)}
+                          className="hover:text-primary/80"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* 右侧预览区 */}
+          <div className="min-h-0 flex flex-col">
+            {report ? (
+              <div className="min-h-0 flex-1 overflow-auto border rounded-md bg-muted/30">
+                  <div className="p-4">
+                    <pre className="font-mono text-sm whitespace-pre-wrap break-words">
+                      {displayContent}
+                    </pre>
+                  </div>
+                </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center flex-1 text-muted-foreground">
+                <FileText className="w-12 h-12 mb-4 opacity-20" />
+                <p>点击"生成报告"查看本周任务</p>
               </div>
             )}
           </div>
         </div>
-
-        <Separator className="flex-shrink-0" />
-
-        {/* 报告区域 - 自适应高度 */}
-        {report && (
-          <div className="grid grid-rows-[auto_1fr] min-h-0 flex-1">
-            <div className="flex items-center justify-between mb-2">
-              <Label>周报</Label>
-            </div>
-
-            {/* Preview Area - 自适应高度 */}
-            <div className="min-h-0 overflow-auto border rounded-md bg-muted/30">
-              <div className="p-4">
-                <pre className="font-mono text-sm whitespace-pre-wrap break-words">
-                  {displayContent}
-                </pre>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {!report && (
-          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground flex-1">
-            <FileText className="w-12 h-12 mb-4 opacity-20" />
-            <p>点击"生成报告"查看本周任务</p>
-          </div>
-        )}
-
-        {/* 复制按钮 - 固定在底部 */}
-        {report && (
-          <div className="flex gap-2 pt-4 border-t flex-shrink-0">
-            <Button onClick={handleCopy} variant="outline" className="flex-1">
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4 mr-2" />
-                  已复制
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4 mr-2" />
-                  复制到剪贴板
-                </>
-              )}
-            </Button>
-          </div>
-        )}
       </DialogContent>
     </Dialog>
   );
