@@ -42,7 +42,6 @@ import {
   Clock,
   FileText,
   User,
-  Users,
   ChevronLeft,
   ChevronRight,
   Check,
@@ -169,9 +168,6 @@ export function TaskList({ onEditTask }: TaskListProps) {
           {paginatedTasks.map(task => {
             const project = projectMap.get(task.projectId);
             const assignee = task.assigneeId ? personMap.get(task.assigneeId) : null;
-            const relatedPersons = task.relatedPersonIds
-              .map(id => personMap.get(id))
-              .filter(Boolean);
             const isOverdue =
               task.dueDate &&
               new Date(task.dueDate) < new Date() &&
@@ -258,30 +254,39 @@ export function TaskList({ onEditTask }: TaskListProps) {
                           </DropdownMenu>
                         </div>
 
+                        {/* 第二行：截止时间、责任人、优先级、状态、进度、项目 */}
                         <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                          {/* 项目 */}
-                          {project && (
-                            <Badge variant="outline" className="gap-1 text-[10px] px-1.5 py-0 h-4">
-                              <div
-                                className="w-1.5 h-1.5 rounded-full"
-                                style={{ backgroundColor: project.color }}
-                              />
-                              {project.name}
+                          {/* 截止日期 */}
+                          {task.dueDate && (
+                            <Badge
+                              variant={isOverdue ? 'destructive' : 'outline'}
+                              className="gap-0.5 text-[10px] px-1.5 py-0 h-4"
+                            >
+                              <Calendar className="w-2.5 h-2.5" />
+                              {format(new Date(task.dueDate), 'MM/dd', { locale: zhCN })}
                             </Badge>
                           )}
 
-                          {/* 状态 */}
-                          <Badge
-                            variant={statusColors[task.status] as any}
-                            className="text-[10px] px-1.5 py-0 h-4"
-                          >
-                            <Clock className="w-2.5 h-2.5 mr-0.5" />
-                            {statusLabels[task.status]}
-                          </Badge>
+                          {/* 负责人 */}
+                          {assignee && (
+                            <Badge variant="secondary" className="gap-0.5 text-[10px] px-1.5 py-0 h-4">
+                              <User className="w-2.5 h-2.5" />
+                              {assignee.name}
+                            </Badge>
+                          )}
 
                           {/* 优先级 */}
                           <Badge variant={priorityColors[task.priority]} className="text-[10px] px-1.5 py-0 h-4">
                             {priorityLabels[task.priority]}
+                          </Badge>
+
+                          {/* 状态 */}
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] px-1.5 py-0 h-4"
+                          >
+                            <Clock className="w-2.5 h-2.5 mr-0.5" />
+                            {statusLabels[task.status]}
                           </Badge>
 
                           {/* 进度 */}
@@ -297,22 +302,14 @@ export function TaskList({ onEditTask }: TaskListProps) {
                             </Badge>
                           )}
 
-                          {/* 负责人 */}
-                          {assignee && (
-                            <Badge variant="secondary" className="gap-0.5 text-[10px] px-1.5 py-0 h-4">
-                              <User className="w-2.5 h-2.5" />
-                              {assignee.name}
-                            </Badge>
-                          )}
-
-                          {/* 截止日期 */}
-                          {task.dueDate && (
-                            <Badge
-                              variant={isOverdue ? 'destructive' : 'outline'}
-                              className="gap-0.5 text-[10px] px-1.5 py-0 h-4"
-                            >
-                              <Calendar className="w-2.5 h-2.5" />
-                              {format(new Date(task.dueDate), 'MM/dd', { locale: zhCN })}
+                          {/* 项目 */}
+                          {project && (
+                            <Badge variant="outline" className="gap-1 text-[10px] px-1.5 py-0 h-4">
+                              <div
+                                className="w-1.5 h-1.5 rounded-full"
+                                style={{ backgroundColor: project.color }}
+                              />
+                              {project.name}
                             </Badge>
                           )}
 
@@ -329,14 +326,6 @@ export function TaskList({ onEditTask }: TaskListProps) {
                             </Badge>
                           )}
                         </div>
-
-                        {/* 关联人 */}
-                        {relatedPersons.length > 0 && (
-                          <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
-                            <Users className="w-2.5 h-2.5" />
-                            <span>{relatedPersons.map(p => p?.name).join('、')}</span>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </CardContent>
