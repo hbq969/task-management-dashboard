@@ -3,6 +3,7 @@ export type TaskStatus =
   | 'todo'
   | 'pending-apply'
   | 'review'
+  | 'researching'
   | 'in-progress'
   | 'processing'
   | 'investigating'

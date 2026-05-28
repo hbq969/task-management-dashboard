@@ -638,7 +638,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
       // 状态排序顺序（按显示顺序）
       const statusOrderList: TaskStatus[] = [
-        'todo', 'pending-apply', 'review', 'in-progress', 'processing',
+        'todo', 'pending-apply', 'review', 'researching', 'in-progress', 'processing',
         'investigating', 'fixing', 'in-flow', 'designing', 'developing',
         'testing', 'pending-change', 'completed'
       ];

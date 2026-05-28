@@ -32,6 +32,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import {
   ListTodo,
   Clock,
+  BookOpen,
   CheckCircle2,
   Folder,
   Tag,
@@ -68,6 +69,7 @@ const statusIcons: Record<TaskStatus, React.ElementType> = {
   todo: CircleDashed,
   'pending-apply': Hourglass,
   review: Eye,
+  researching: BookOpen,
   'in-progress': Loader2,
   processing: Activity,
   investigating: Search,
@@ -85,6 +87,7 @@ const statusIconColors: Record<TaskStatus, string> = {
   todo: 'text-slate-400',
   'pending-apply': 'text-slate-400',
   review: 'text-blue-500',
+  researching: 'text-cyan-500',
   'in-progress': 'text-blue-500',
   processing: 'text-sky-500',
   investigating: 'text-amber-500',
