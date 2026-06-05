@@ -57,6 +57,7 @@ import {
   RefreshCw,
   CircleDot,
   CircleDashed,
+  Archive,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -66,6 +67,7 @@ import { ProjectDialog } from './ProjectDialog';
 
 // 状态图标映射
 const statusIcons: Record<TaskStatus, React.ElementType> = {
+  shelved: Archive,
   todo: CircleDashed,
   'pending-apply': Hourglass,
   review: Eye,
@@ -84,6 +86,7 @@ const statusIcons: Record<TaskStatus, React.ElementType> = {
 
 // 状态图标颜色映射
 const statusIconColors: Record<TaskStatus, string> = {
+  shelved: 'text-slate-400',
   todo: 'text-slate-400',
   'pending-apply': 'text-slate-400',
   review: 'text-blue-500',

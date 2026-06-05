@@ -6,6 +6,7 @@ export const priorityColors = {
 } as const;
 
 export const statusColors = {
+  shelved: 'outline',
   todo: 'outline',
   'pending-apply': 'outline',
   review: 'secondary',
@@ -30,6 +31,7 @@ export const priorityLabels = {
 };
 
 export const statusLabels = {
+  shelved: '搁置中',
   todo: '待办',
   'pending-apply': '待申请',
   review: '评审',

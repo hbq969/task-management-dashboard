@@ -1,5 +1,5 @@
 export type Priority = 'urgent' | 'high' | 'medium' | 'low';
-export type TaskStatus =
+export type TaskStatus = 'shelved'
   | 'todo'
   | 'pending-apply'
   | 'review'
