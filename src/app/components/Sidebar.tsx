@@ -125,7 +125,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
       counts[key] = tasks.filter(t => t.status === key).length;
     });
     // 添加"未完成"计数（排除已完成）
-    counts.incomplete = tasks.filter(t => t.status !== 'completed').length;
+    counts.incomplete = tasks.filter(t => t.status !== 'completed' && t.status !== 'shelved').length;
     return counts;
   }, [tasks]);
 

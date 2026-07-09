@@ -296,7 +296,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
     // Filter by status
     if (filters.status === 'incomplete') {
-      filtered = filtered.filter(task => task.status !== 'completed');
+      filtered = filtered.filter(task => task.status !== 'completed' && task.status !== 'shelved');
     } else if (filters.status !== 'all') {
       filtered = filtered.filter(task => task.status === filters.status);
     }
