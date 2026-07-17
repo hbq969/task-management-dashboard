@@ -249,95 +249,80 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
             </div>
 
             {formData.subtasks.length > 0 && (
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {formData.subtasks.map(subtask => (
-                  <div key={subtask.id} className="border rounded-md p-2 space-y-1.5">
-                    {/* Row 1: 完成按钮 + 标题 + 删除 */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newStatus = subtask.status === 'completed' ? 'todo' as TaskStatus : 'completed' as TaskStatus;
-                          handleUpdateSubtask(subtask.id, {
-                            status: newStatus,
-                            progress: newStatus === 'completed' ? 100 : 0,
-                          });
+                  <div key={subtask.id} className="flex items-center gap-1.5 border rounded-md p-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newStatus = subtask.status === 'completed' ? 'todo' as TaskStatus : 'completed' as TaskStatus;
+                        handleUpdateSubtask(subtask.id, {
+                          status: newStatus,
+                          progress: newStatus === 'completed' ? 100 : 0,
+                        });
+                      }}
+                      className={`size-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                        subtask.status === 'completed'
+                          ? 'bg-green-500 border-green-500 text-white'
+                          : 'border-gray-300 hover:border-green-400'
+                      }`}
+                    >
+                      {subtask.status === 'completed' && <Check className="size-2.5" />}
+                    </button>
+                    <Input
+                      value={subtask.title}
+                      onChange={e => handleUpdateSubtask(subtask.id, { title: e.target.value })}
+                      className="h-7 text-xs flex-1 min-w-0"
+                      placeholder="子任务标题"
+                    />
+                    <Select
+                      value={subtask.status}
+                      onValueChange={(value: TaskStatus) => {
+                        let newProgress = subtask.progress;
+                        if (value === 'completed') newProgress = 100;
+                        else if (value === 'todo') newProgress = 0;
+                        handleUpdateSubtask(subtask.id, { status: value, progress: newProgress });
+                      }}
+                    >
+                      <SelectTrigger className="h-7 text-xs w-[70px] shrink-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(statusLabels) as TaskStatus[]).map(key => (
+                          <SelectItem key={key} value={key}>{statusLabels[key]}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="flex items-center gap-0.5 shrink-0 w-[60px]">
+                      <Slider
+                        value={[subtask.progress]}
+                        onValueChange={([value]) => {
+                          let newStatus = subtask.status;
+                          if (value === 100) newStatus = 'completed';
+                          else if (value === 0 && subtask.status === 'completed') newStatus = 'todo';
+                          handleUpdateSubtask(subtask.id, { progress: value, status: newStatus });
                         }}
-                        className={`size-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                          subtask.status === 'completed'
-                            ? 'bg-green-500 border-green-500 text-white'
-                            : 'border-gray-300 hover:border-green-400'
-                        }`}
-                      >
-                        {subtask.status === 'completed' && <Check className="size-2.5" />}
-                      </button>
-                      <Input
-                        value={subtask.title}
-                        onChange={e => handleUpdateSubtask(subtask.id, { title: e.target.value })}
-                        className="h-7 text-sm flex-1"
-                        placeholder="子任务标题"
+                        max={100}
+                        step={5}
+                        className="flex-1"
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                        onClick={() => handleDeleteSubtask(subtask.id)}
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </Button>
+                      <span className="text-[10px] text-muted-foreground w-6 text-right">{subtask.progress}%</span>
                     </div>
-
-                    {/* Row 2: 状态 + 进度 + 责任人 */}
-                    <div className="flex items-center gap-1.5">
-                      <Select
-                        value={subtask.status}
-                        onValueChange={(value: TaskStatus) => {
-                          let newProgress = subtask.progress;
-                          if (value === 'completed') newProgress = 100;
-                          else if (value === 'todo') newProgress = 0;
-                          handleUpdateSubtask(subtask.id, { status: value, progress: newProgress });
-                        }}
-                      >
-                        <SelectTrigger className="h-7 text-xs w-[90px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(Object.keys(statusLabels) as TaskStatus[]).map(key => (
-                            <SelectItem key={key} value={key}>{statusLabels[key]}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <div className="flex items-center gap-1 flex-1">
-                        <Slider
-                          value={[subtask.progress]}
-                          onValueChange={([value]) => {
-                            let newStatus = subtask.status;
-                            if (value === 100) newStatus = 'completed';
-                            else if (value === 0 && subtask.status === 'completed') newStatus = 'todo';
-                            handleUpdateSubtask(subtask.id, { progress: value, status: newStatus });
-                          }}
-                          max={100}
-                          step={5}
-                          className="flex-1"
-                        />
-                        <span className="text-xs text-muted-foreground w-7 text-right">{subtask.progress}%</span>
-                      </div>
-                      <Select
-                        value={subtask.assigneeId || '__none__'}
-                        onValueChange={(value) => handleUpdateSubtask(subtask.id, { assigneeId: value === '__none__' ? undefined : value })}
-                      >
-                        <SelectTrigger className="h-7 text-xs w-[80px]">
-                          <SelectValue placeholder="责任人" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__none__">无</SelectItem>
-                          {people.map(p => (
-                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <Input
+                      value={subtask.assignee || ''}
+                      onChange={e => handleUpdateSubtask(subtask.id, { assignee: e.target.value || undefined })}
+                      className="h-7 text-xs w-[60px] shrink-0"
+                      placeholder="负责人"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-destructive hover:text-destructive shrink-0"
+                      onClick={() => handleDeleteSubtask(subtask.id)}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
                 ))}
               </div>

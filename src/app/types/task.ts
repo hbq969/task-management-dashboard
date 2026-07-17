@@ -31,7 +31,7 @@ export interface SubTask {
   title: string;
   status: TaskStatus;
   progress: number; // 0-100
-  assigneeId?: string;
+  assignee?: string; // 手工输入责任人
 }
 
 export interface Task {

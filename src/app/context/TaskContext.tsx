@@ -700,12 +700,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           // 子任务
           if (task.subtasks && task.subtasks.length > 0) {
             task.subtasks.forEach(sub => {
-              const subAssignee = sub.assigneeId
-                ? people.find(p => p.id === sub.assigneeId)?.name
-                : undefined;
               let subLine = `  - ${sub.title}（${statusLabels[sub.status]}`;
               if (sub.progress > 0) subLine += `，${sub.progress}%`;
-              if (subAssignee) subLine += `，${subAssignee}`;
+              if (sub.assignee) subLine += `，${sub.assignee}`;
               subLine += '）';
               report += subLine + '\n';
             });
