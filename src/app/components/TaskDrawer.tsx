@@ -284,7 +284,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                         handleUpdateSubtask(subtask.id, { status: value, progress: newProgress });
                       }}
                     >
-                      <SelectTrigger className="h-7 text-xs w-[80px] shrink-0">
+                      <SelectTrigger className="h-7 text-xs w-[88px] shrink-0">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
