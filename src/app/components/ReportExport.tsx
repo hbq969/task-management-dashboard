@@ -60,24 +60,11 @@ const markdownToPlainText = (md: string): string => {
       taskIndex++;
       const taskName = line.replace(/^###\s+/, '').replace(/\*\*/g, '');
 
-      // 收集描述行（以空格开头但不以 '- ' 开头的缩进行）
-      const descriptions: string[] = [];
-      let j = i + 1;
-      while (j < lines.length) {
-        const rawLine = lines[j];
-        if (rawLine.startsWith('  ') && !rawLine.trim().startsWith('- ')) {
-          descriptions.push(rawLine.trim());
-          j++;
-        } else {
-          break;
-        }
-      }
-
       // 收集状态和进度信息
       let status = '';
       let progress = '';
-      // ponytail: exclude subtask lines (  - ...) from detail loop; they look the same after trim
-      for (; j < lines.length && lines[j].trim().startsWith('- ') && !lines[j].startsWith('  - '); j++) {
+      let j = i + 1;
+      for (; j < lines.length && lines[j].trim().startsWith('- '); j++) {
         const detail = lines[j].trim();
         if (detail.includes('状态：')) {
           status = detail.replace(/- 状态：/, '').trim();
@@ -87,11 +74,11 @@ const markdownToPlainText = (md: string): string => {
         }
       }
 
-      // 收集子任务
+      // 收集子任务（`  1. title...` 格式）
       const subtasks: string[] = [];
       for (; j < lines.length; j++) {
-        if (lines[j].startsWith('  - ')) {
-          subtasks.push(lines[j].trim().replace(/^- /, ''));
+        if (/^  \d/.test(lines[j])) {
+          subtasks.push(lines[j].trim());
         } else {
           break;
         }
@@ -107,14 +94,9 @@ const markdownToPlainText = (md: string): string => {
       }
       result.push(taskLine);
 
-      // 输出描述行
-      for (const desc of descriptions) {
-        result.push(`  ${desc}`);
-      }
-
       // 输出子任务
       for (const sub of subtasks) {
-        result.push(`  - ${sub}`);
+        result.push(`  ${sub}`);
       }
 
       continue;

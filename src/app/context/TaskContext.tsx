@@ -674,12 +674,6 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
             : undefined;
 
           report += `### ${task.title}\n`;
-          if (task.exportDescription && task.description?.trim()) {
-            const descLines = task.description.trim().split('\n');
-            descLines.forEach(line => {
-              report += `  ${line}\n`;
-            });
-          }
           report += `- 状态：${statusLabels[task.status]}\n`;
           if (assignee) {
             report += `- 负责人：${assignee}\n`;
@@ -699,8 +693,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           }
           // 子任务
           if (task.subtasks && task.subtasks.length > 0) {
-            task.subtasks.forEach(sub => {
-              let subLine = `  - ${sub.title}（${statusLabels[sub.status]}`;
+            task.subtasks.forEach((sub, i) => {
+              let subLine = `  ${i + 1}. ${sub.title}（${statusLabels[sub.status]}`;
               if (sub.progress > 0) subLine += `，${sub.progress}%`;
               if (sub.assignee) subLine += `，${sub.assignee}`;
               subLine += '）';
