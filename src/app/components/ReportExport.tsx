@@ -74,14 +74,15 @@ const markdownToPlainText = (md: string): string => {
         }
       }
 
-      // 收集子任务（`  1. title...` 格式）
+      // 收集子任务（`  ① title...` 格式），跳过备注多行续行
       const subtasks: string[] = [];
       for (; j < lines.length; j++) {
         if (lines[j].startsWith('  ')) {
           subtasks.push(lines[j].trim());
-        } else {
+        } else if (lines[j].trim() === '') {
           break;
         }
+        // 非空非缩进行（如备注续行）跳过
       }
 
       // 构建任务行
