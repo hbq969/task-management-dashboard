@@ -212,13 +212,13 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
             />
           </div>
 
-          {/* 属性行：项目、状态、优先级、截止日期、进度、负责人、关联人 */}
+          {/* 属性行：项目、状态、优先级、截止日期、负责人、关联人 */}
           <div className="flex items-center gap-1.5 border rounded-md p-1.5">
             <Select
               value={formData.projectId}
               onValueChange={value => setFormData(prev => ({ ...prev, projectId: value }))}
             >
-              <SelectTrigger className="h-7 text-xs w-[80px] shrink-0">
+              <SelectTrigger className="h-7 text-xs flex-1 min-w-0">
                 <SelectValue placeholder="项目" />
               </SelectTrigger>
               <SelectContent>
@@ -243,7 +243,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                 });
               }}
             >
-              <SelectTrigger className="h-7 text-xs w-[88px] shrink-0">
+              <SelectTrigger className="h-7 text-xs flex-1 min-w-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -256,7 +256,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
               value={formData.priority}
               onValueChange={value => setFormData(prev => ({ ...prev, priority: value as Priority }))}
             >
-              <SelectTrigger className="h-7 text-xs w-[64px] shrink-0">
+              <SelectTrigger className="h-7 text-xs flex-1 min-w-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -268,9 +268,9 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
             </Select>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="h-7 text-xs px-1.5 shrink-0 gap-0.5">
-                  <CalendarIcon className="w-3 h-3" />
-                  {formData.dueDate ? format(formData.dueDate, 'MM/dd') : '日期'}
+                <Button variant="outline" className="h-7 text-xs px-1.5 flex-1 min-w-0 gap-0.5 justify-start">
+                  <CalendarIcon className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{formData.dueDate ? format(formData.dueDate, 'MM/dd') : '日期'}</span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -289,28 +289,11 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                 )}
               </PopoverContent>
             </Popover>
-            <div className="flex items-center gap-0.5 shrink-0 w-[72px]">
-              <Slider
-                value={[formData.progress]}
-                onValueChange={([value]) => {
-                  setFormData(prev => {
-                    let newStatus = prev.status;
-                    if (value === 100) newStatus = 'completed';
-                    else if (value === 0 && prev.status === 'completed') newStatus = 'todo';
-                    return { ...prev, progress: value, status: newStatus };
-                  });
-                }}
-                max={100}
-                step={5}
-                className="flex-1"
-              />
-              <span className="text-[10px] text-muted-foreground w-6 text-right">{formData.progress}%</span>
-            </div>
             <Select
               value={formData.assigneeId || '__none__'}
               onValueChange={value => setFormData(prev => ({ ...prev, assigneeId: value === '__none__' ? '' : value }))}
             >
-              <SelectTrigger className="h-7 text-xs w-[72px] shrink-0">
+              <SelectTrigger className="h-7 text-xs flex-1 min-w-0">
                 <SelectValue placeholder="负责人" />
               </SelectTrigger>
               <SelectContent>
@@ -322,9 +305,9 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
             </Select>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="h-7 text-xs px-1.5 shrink-0 gap-0.5">
-                  <Users className="w-3 h-3" />
-                  {formData.relatedPersonIds.length || '关联'}
+                <Button variant="outline" className="h-7 text-xs px-1.5 flex-1 min-w-0 gap-0.5 justify-start">
+                  <Users className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{formData.relatedPersonIds.length > 0 ? `${formData.relatedPersonIds.length}人` : '关联'}</span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-48 p-0" align="end">
@@ -356,6 +339,25 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                 </div>
               </PopoverContent>
             </Popover>
+          </div>
+
+          {/* 进度行 */}
+          <div className="flex items-center gap-1.5 border rounded-md px-1.5 py-0.5">
+            <Slider
+              value={[formData.progress]}
+              onValueChange={([value]) => {
+                setFormData(prev => {
+                  let newStatus = prev.status;
+                  if (value === 100) newStatus = 'completed';
+                  else if (value === 0 && prev.status === 'completed') newStatus = 'todo';
+                  return { ...prev, progress: value, status: newStatus };
+                });
+              }}
+              max={100}
+              step={5}
+              className="flex-1"
+            />
+            <span className="text-xs text-muted-foreground w-8 text-right shrink-0">{formData.progress}%</span>
           </div>
 
           {/* 子任务 */}
