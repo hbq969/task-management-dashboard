@@ -185,6 +185,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           ...task,
           progress: task.progress ?? 0,
           relatedPersonIds: task.relatedPersonIds ?? [],
+          subtasks: task.subtasks ?? [],
         }));
         setTasks(migratedTasks);
         setProjects(data.projects);
@@ -579,6 +580,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           ...task,
           progress: task.progress ?? 0,
           relatedPersonIds: task.relatedPersonIds ?? [],
+          subtasks: task.subtasks ?? [],
         }));
 
         setTasks(migratedTasks);
@@ -694,6 +696,19 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           }
           if (task.notes) {
             report += `- 备注：${task.notes}\n`;
+          }
+          // 子任务
+          if (task.subtasks && task.subtasks.length > 0) {
+            task.subtasks.forEach(sub => {
+              const subAssignee = sub.assigneeId
+                ? people.find(p => p.id === sub.assigneeId)?.name
+                : undefined;
+              let subLine = `  - ${sub.title}（${statusLabels[sub.status]}`;
+              if (sub.progress > 0) subLine += `，${sub.progress}%`;
+              if (subAssignee) subLine += `，${subAssignee}`;
+              subLine += '）';
+              report += subLine + '\n';
+            });
           }
           report += '\n';
         });
