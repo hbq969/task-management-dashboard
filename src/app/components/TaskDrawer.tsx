@@ -324,14 +324,14 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                         <span className="text-xs text-muted-foreground w-7 text-right">{subtask.progress}%</span>
                       </div>
                       <Select
-                        value={subtask.assigneeId || ''}
-                        onValueChange={(value) => handleUpdateSubtask(subtask.id, { assigneeId: value || undefined })}
+                        value={subtask.assigneeId || '__none__'}
+                        onValueChange={(value) => handleUpdateSubtask(subtask.id, { assigneeId: value === '__none__' ? undefined : value })}
                       >
                         <SelectTrigger className="h-7 text-xs w-[80px]">
                           <SelectValue placeholder="责任人" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">无</SelectItem>
+                          <SelectItem value="__none__">无</SelectItem>
                           {people.map(p => (
                             <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                           ))}
