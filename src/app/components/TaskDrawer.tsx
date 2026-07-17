@@ -268,7 +268,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
             </Select>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="h-7 text-xs px-1.5 flex-1 min-w-0 gap-0.5 justify-start">
+                <Button variant="outline" className="h-7 text-xs px-1.5 flex-[0.8] min-w-0 gap-0.5 justify-start">
                   <CalendarIcon className="w-3 h-3 shrink-0" />
                   <span className="truncate">{formData.dueDate ? format(formData.dueDate, 'MM/dd') : '日期'}</span>
                 </Button>
