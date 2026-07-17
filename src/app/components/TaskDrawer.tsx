@@ -26,7 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { CalendarIcon, X, Tag as TagIcon, User, Users, ChevronsUpDown, Check, Search } from 'lucide-react';
-import type { Task, Priority, TaskStatus } from '../types/task';
+import type { Task, Priority, TaskStatus, SubTask } from '../types/task';
 import { priorityColors, priorityLabels, statusLabels, getProgressColor } from '../constants/taskLabels';
 import { cn } from './ui/utils';
 
@@ -52,7 +52,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
     progress: 0,
     assigneeId: '' as string,
     relatedPersonIds: [] as string[],
-    exportDescription: false,
+    subtasks: [] as SubTask[],
   });
 
   const [tagInput, setTagInput] = useState('');
@@ -60,6 +60,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
   const [assigneeOpen, setAssigneeOpen] = useState(false);
   const [assigneeSearch, setAssigneeSearch] = useState('');
   const [relatedPersonSearch, setRelatedPersonSearch] = useState('');
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
 
   // 搜索过滤人员列表
   const filteredAssigneePeople = people.filter(person =>
@@ -86,7 +87,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
         progress: task.progress ?? 0,
         assigneeId: task.assigneeId || '',
         relatedPersonIds: task.relatedPersonIds ?? [],
-        exportDescription: task.exportDescription ?? false,
+        subtasks: task.subtasks ?? [],
       });
     } else {
       setFormData({
@@ -101,7 +102,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
         progress: 0,
         assigneeId: '',
         relatedPersonIds: [],
-        exportDescription: false,
+        subtasks: [],
       });
     }
     setTagInput('');
@@ -124,7 +125,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
       progress: formData.progress,
       assigneeId: formData.assigneeId || undefined,
       relatedPersonIds: formData.relatedPersonIds,
-      exportDescription: formData.exportDescription,
+      subtasks: formData.subtasks,
     };
 
     if (isEdit) {
@@ -160,6 +161,33 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
       tags: prev.tags.includes(tag)
         ? prev.tags.filter(t => t !== tag)
         : [...prev.tags, tag],
+    }));
+  };
+
+  const handleAddSubtask = () => {
+    const title = newSubtaskTitle.trim();
+    if (!title) return;
+    const newSubtask: SubTask = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      title,
+      status: 'todo' as TaskStatus,
+      progress: 0,
+    };
+    setFormData(prev => ({ ...prev, subtasks: [...prev.subtasks, newSubtask] }));
+    setNewSubtaskTitle('');
+  };
+
+  const handleUpdateSubtask = (id: string, updates: Partial<SubTask>) => {
+    setFormData(prev => ({
+      ...prev,
+      subtasks: prev.subtasks.map(s => s.id === id ? { ...s, ...updates } : s),
+    }));
+  };
+
+  const handleDeleteSubtask = (id: string) => {
+    setFormData(prev => ({
+      ...prev,
+      subtasks: prev.subtasks.filter(s => s.id !== id),
     }));
   };
 
@@ -200,18 +228,120 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
             />
           </div>
 
-          {/* 导出描述到报告 */}
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="exportDescription"
-              checked={formData.exportDescription}
-              onCheckedChange={(checked) =>
-                setFormData(prev => ({ ...prev, exportDescription: checked === true }))
-              }
-            />
-            <Label htmlFor="exportDescription" className="cursor-pointer text-sm">
-              导出描述到报告
-            </Label>
+          {/* 子任务 */}
+          <div className="space-y-2">
+            <Label>子任务</Label>
+            <div className="flex gap-2">
+              <Input
+                placeholder="输入子任务标题，回车添加"
+                value={newSubtaskTitle}
+                onChange={e => setNewSubtaskTitle(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddSubtask();
+                  }
+                }}
+              />
+              <Button type="button" onClick={handleAddSubtask} variant="outline" size="sm">
+                添加
+              </Button>
+            </div>
+
+            {formData.subtasks.length > 0 && (
+              <div className="space-y-1.5">
+                {formData.subtasks.map(subtask => (
+                  <div key={subtask.id} className="border rounded-md p-2 space-y-1.5">
+                    {/* Row 1: 完成按钮 + 标题 + 删除 */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newStatus = subtask.status === 'completed' ? 'todo' as TaskStatus : 'completed' as TaskStatus;
+                          handleUpdateSubtask(subtask.id, {
+                            status: newStatus,
+                            progress: newStatus === 'completed' ? 100 : 0,
+                          });
+                        }}
+                        className={`size-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                          subtask.status === 'completed'
+                            ? 'bg-green-500 border-green-500 text-white'
+                            : 'border-gray-300 hover:border-green-400'
+                        }`}
+                      >
+                        {subtask.status === 'completed' && <Check className="size-2.5" />}
+                      </button>
+                      <Input
+                        value={subtask.title}
+                        onChange={e => handleUpdateSubtask(subtask.id, { title: e.target.value })}
+                        className="h-7 text-sm flex-1"
+                        placeholder="子任务标题"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                        onClick={() => handleDeleteSubtask(subtask.id)}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+
+                    {/* Row 2: 状态 + 进度 + 责任人 */}
+                    <div className="flex items-center gap-1.5">
+                      <Select
+                        value={subtask.status}
+                        onValueChange={(value: TaskStatus) => {
+                          let newProgress = subtask.progress;
+                          if (value === 'completed') newProgress = 100;
+                          else if (value === 'todo') newProgress = 0;
+                          handleUpdateSubtask(subtask.id, { status: value, progress: newProgress });
+                        }}
+                      >
+                        <SelectTrigger className="h-7 text-xs w-[90px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(Object.keys(statusLabels) as TaskStatus[]).map(key => (
+                            <SelectItem key={key} value={key}>{statusLabels[key]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <div className="flex items-center gap-1 flex-1">
+                        <Slider
+                          value={[subtask.progress]}
+                          onValueChange={([value]) => {
+                            let newStatus = subtask.status;
+                            if (value === 100) newStatus = 'completed';
+                            else if (value === 0 && subtask.status === 'completed') newStatus = 'todo';
+                            handleUpdateSubtask(subtask.id, { progress: value, status: newStatus });
+                          }}
+                          max={100}
+                          step={5}
+                          className="flex-1"
+                        />
+                        <span className="text-xs text-muted-foreground w-7 text-right">{subtask.progress}%</span>
+                      </div>
+                      <Select
+                        value={subtask.assigneeId || ''}
+                        onValueChange={(value) => handleUpdateSubtask(subtask.id, { assigneeId: value || undefined })}
+                      >
+                        <SelectTrigger className="h-7 text-xs w-[80px]">
+                          <SelectValue placeholder="责任人" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">无</SelectItem>
+                          {people.map(p => (
+                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 项目和状态 */}
