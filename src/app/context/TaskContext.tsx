@@ -693,8 +693,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           }
           // 子任务
           if (task.subtasks && task.subtasks.length > 0) {
+            const circles = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
             task.subtasks.forEach((sub, i) => {
-              let subLine = `  ${i + 1}. ${sub.title}（${statusLabels[sub.status]}`;
+              const num = i < 20 ? circles[i] : `(${i + 1})`;
+              let subLine = `  ${num} ${sub.title}（${statusLabels[sub.status]}`;
               if (sub.progress > 0) subLine += `，${sub.progress}%`;
               if (sub.assignee) subLine += `，${sub.assignee}`;
               subLine += '）';

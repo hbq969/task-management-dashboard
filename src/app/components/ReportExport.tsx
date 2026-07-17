@@ -77,7 +77,7 @@ const markdownToPlainText = (md: string): string => {
       // 收集子任务（`  1. title...` 格式）
       const subtasks: string[] = [];
       for (; j < lines.length; j++) {
-        if (/^  \d/.test(lines[j])) {
+        if (lines[j].startsWith('  ')) {
           subtasks.push(lines[j].trim());
         } else {
           break;
