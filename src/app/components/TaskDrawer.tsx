@@ -25,10 +25,9 @@ import { Calendar } from './ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { CalendarIcon, X, Tag as TagIcon, User, Users, ChevronsUpDown, Check, Search } from 'lucide-react';
+import { CalendarIcon, X, Tag as TagIcon, Users, Check } from 'lucide-react';
 import type { Task, Priority, TaskStatus, SubTask } from '../types/task';
-import { priorityColors, priorityLabels, statusLabels, getProgressColor } from '../constants/taskLabels';
-import { cn } from './ui/utils';
+import { priorityLabels, statusLabels } from '../constants/taskLabels';
 
 interface TaskDrawerProps {
   open: boolean;
@@ -56,22 +55,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
   });
 
   const [tagInput, setTagInput] = useState('');
-  const [relatedPersonsOpen, setRelatedPersonsOpen] = useState(false);
-  const [assigneeOpen, setAssigneeOpen] = useState(false);
-  const [assigneeSearch, setAssigneeSearch] = useState('');
-  const [relatedPersonSearch, setRelatedPersonSearch] = useState('');
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
-
-  // 搜索过滤人员列表
-  const filteredAssigneePeople = people.filter(person =>
-    person.name.toLowerCase().includes(assigneeSearch.toLowerCase()) ||
-    (person.department && person.department.toLowerCase().includes(assigneeSearch.toLowerCase()))
-  );
-
-  const filteredRelatedPeople = people.filter(person =>
-    person.name.toLowerCase().includes(relatedPersonSearch.toLowerCase()) ||
-    (person.department && person.department.toLowerCase().includes(relatedPersonSearch.toLowerCase()))
-  );
 
   useEffect(() => {
     if (task) {
@@ -228,6 +212,152 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
             />
           </div>
 
+          {/* 属性行：项目、状态、优先级、截止日期、进度、负责人、关联人 */}
+          <div className="flex items-center gap-1.5 border rounded-md p-1.5">
+            <Select
+              value={formData.projectId}
+              onValueChange={value => setFormData(prev => ({ ...prev, projectId: value }))}
+            >
+              <SelectTrigger className="h-7 text-xs w-[80px] shrink-0">
+                <SelectValue placeholder="项目" />
+              </SelectTrigger>
+              <SelectContent>
+                {projects.map(project => (
+                  <SelectItem key={project.id} value={project.id}>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: project.color }} />
+                      <span className="truncate">{project.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={formData.status}
+              onValueChange={(value: TaskStatus) => {
+                setFormData(prev => {
+                  let newProgress = prev.progress;
+                  if (value === 'completed') newProgress = 100;
+                  else if (value === 'todo') newProgress = 0;
+                  return { ...prev, status: value, progress: newProgress };
+                });
+              }}
+            >
+              <SelectTrigger className="h-7 text-xs w-[88px] shrink-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(statusLabels) as TaskStatus[]).map(key => (
+                  <SelectItem key={key} value={key}>{statusLabels[key]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={formData.priority}
+              onValueChange={value => setFormData(prev => ({ ...prev, priority: value as Priority }))}
+            >
+              <SelectTrigger className="h-7 text-xs w-[64px] shrink-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="urgent">{priorityLabels.urgent}</SelectItem>
+                <SelectItem value="high">{priorityLabels.high}</SelectItem>
+                <SelectItem value="medium">{priorityLabels.medium}</SelectItem>
+                <SelectItem value="low">{priorityLabels.low}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="h-7 text-xs px-1.5 shrink-0 gap-0.5">
+                  <CalendarIcon className="w-3 h-3" />
+                  {formData.dueDate ? format(formData.dueDate, 'MM/dd') : '日期'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={formData.dueDate || undefined}
+                  onSelect={date => setFormData(prev => ({ ...prev, dueDate: date || null }))}
+                  locale={zhCN}
+                />
+                {formData.dueDate && (
+                  <div className="p-2 border-t">
+                    <Button variant="outline" size="sm" className="w-full h-7 text-xs" onClick={() => setFormData(prev => ({ ...prev, dueDate: null }))}>
+                      清除
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+            <div className="flex items-center gap-0.5 shrink-0 w-[72px]">
+              <Slider
+                value={[formData.progress]}
+                onValueChange={([value]) => {
+                  setFormData(prev => {
+                    let newStatus = prev.status;
+                    if (value === 100) newStatus = 'completed';
+                    else if (value === 0 && prev.status === 'completed') newStatus = 'todo';
+                    return { ...prev, progress: value, status: newStatus };
+                  });
+                }}
+                max={100}
+                step={5}
+                className="flex-1"
+              />
+              <span className="text-[10px] text-muted-foreground w-6 text-right">{formData.progress}%</span>
+            </div>
+            <Select
+              value={formData.assigneeId || '__none__'}
+              onValueChange={value => setFormData(prev => ({ ...prev, assigneeId: value === '__none__' ? '' : value }))}
+            >
+              <SelectTrigger className="h-7 text-xs w-[72px] shrink-0">
+                <SelectValue placeholder="负责人" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">无</SelectItem>
+                {people.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="h-7 text-xs px-1.5 shrink-0 gap-0.5">
+                  <Users className="w-3 h-3" />
+                  {formData.relatedPersonIds.length || '关联'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-0" align="end">
+                <div className="max-h-48 overflow-y-auto">
+                  {people.length > 0 ? (
+                    <div className="space-y-0.5 p-1">
+                      {people.map(person => (
+                        <div
+                          key={person.id}
+                          className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-muted/50 rounded text-sm"
+                          onClick={() => {
+                            const isSelected = formData.relatedPersonIds.includes(person.id);
+                            setFormData(prev => ({
+                              ...prev,
+                              relatedPersonIds: isSelected
+                                ? prev.relatedPersonIds.filter(id => id !== person.id)
+                                : [...prev.relatedPersonIds, person.id],
+                            }));
+                          }}
+                        >
+                          <Checkbox checked={formData.relatedPersonIds.includes(person.id)} onChange={() => {}} />
+                          <span>{person.name}{person.department && <span className="text-muted-foreground"> ({person.department})</span>}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="px-3 py-6 text-center text-sm text-muted-foreground">暂无人员</div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
           {/* 子任务 */}
           <div className="space-y-2">
             <Label>子任务</Label>
@@ -329,141 +459,6 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
             )}
           </div>
 
-          {/* 项目和状态 */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>所属项目</Label>
-              <Select
-                value={formData.projectId}
-                onValueChange={value =>
-                  setFormData(prev => ({ ...prev, projectId: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map(project => (
-                    <SelectItem key={project.id} value={project.id}>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: project.color }}
-                        />
-                        {project.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>状态</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value: TaskStatus) => {
-                  setFormData(prev => {
-                    let newProgress = prev.progress;
-                    if (value === 'completed') {
-                      newProgress = 100;
-                    } else if (value === 'todo') {
-                      newProgress = 0;
-                    }
-                    return { ...prev, status: value, progress: newProgress };
-                  });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(statusLabels) as TaskStatus[]).map(key => (
-                    <SelectItem key={key} value={key}>{statusLabels[key]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* 优先级和截止日期 */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>优先级</Label>
-              <Select
-                value={formData.priority}
-                onValueChange={value =>
-                  setFormData(prev => ({ ...prev, priority: value as Priority }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="urgent">
-                    <Badge variant={priorityColors.urgent}>
-                      {priorityLabels.urgent}
-                    </Badge>
-                  </SelectItem>
-                  <SelectItem value="high">
-                    <Badge variant={priorityColors.high}>
-                      {priorityLabels.high}
-                    </Badge>
-                  </SelectItem>
-                  <SelectItem value="medium">
-                    <Badge variant={priorityColors.medium}>
-                      {priorityLabels.medium}
-                    </Badge>
-                  </SelectItem>
-                  <SelectItem value="low">
-                    <Badge variant={priorityColors.low}>
-                      {priorityLabels.low}
-                    </Badge>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>截止日期</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.dueDate ? (
-                      format(formData.dueDate, 'PPP', { locale: zhCN })
-                    ) : (
-                      <span className="text-muted-foreground">选择日期</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.dueDate || undefined}
-                    onSelect={date =>
-                      setFormData(prev => ({ ...prev, dueDate: date || null }))
-                    }
-                    locale={zhCN}
-                  />
-                  {formData.dueDate && (
-                    <div className="p-3 border-t">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() =>
-                          setFormData(prev => ({ ...prev, dueDate: null }))
-                        }
-                      >
-                        清除日期
-                      </Button>
-                    </div>
-                  )}
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
 
           {/* 标签 */}
           <div className="space-y-2">
@@ -518,244 +513,6 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                 ))}
               </div>
             )}
-          </div>
-
-          {/* 进度百分比 */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>进度</Label>
-              <span className={`text-sm font-medium ${getProgressColor(formData.progress).replace('bg-', 'text-')}`}>
-                {formData.progress}%
-              </span>
-            </div>
-            <div className="relative">
-              <Slider
-                value={[formData.progress]}
-                onValueChange={([value]) => {
-                  setFormData(prev => {
-                    let newStatus = prev.status;
-                    if (value === 100) {
-                      newStatus = 'completed';
-                    } else if (value === 0) {
-                      newStatus = 'todo';
-                    }
-                    return { ...prev, progress: value, status: newStatus };
-                  });
-                }}
-                max={100}
-                step={5}
-                className="w-full"
-              />
-              {/* 进度颜色条 */}
-              <div className="absolute inset-0 pointer-events-none">
-                <div
-                  className={`h-full rounded-full transition-all ${getProgressColor(formData.progress)}`}
-                  style={{ width: `${formData.progress}%`, opacity: 0.2 }}
-                />
-              </div>
-            </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>未开始</span>
-              <span>已完成</span>
-            </div>
-          </div>
-
-          {/* 负责人 */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              负责人
-            </Label>
-            <Popover open={assigneeOpen} onOpenChange={(open) => {
-              setAssigneeOpen(open);
-              if (!open) setAssigneeSearch('');
-            }}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  className="w-full justify-between"
-                >
-                  {formData.assigneeId ? (
-                    (() => {
-                      const person = people.find(p => p.id === formData.assigneeId);
-                      return person ? (
-                        <span>
-                          {person.name}
-                          {person.department && <span className="text-muted-foreground"> ({person.department})</span>}
-                        </span>
-                      ) : '选择负责人';
-                    })()
-                  ) : (
-                    <span className="text-muted-foreground">选择负责人</span>
-                  )}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start" onWheel={e => e.stopPropagation()}>
-                <div className="p-2 border-b">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="搜索负责人..."
-                      value={assigneeSearch}
-                      onChange={e => setAssigneeSearch(e.target.value)}
-                      className="pl-8 h-8"
-                    />
-                  </div>
-                </div>
-                <div className="max-h-48 overflow-y-auto">
-                  {filteredAssigneePeople.length > 0 ? (
-                    <div className="space-y-0.5 p-1">
-                      <div
-                        className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-muted/50 rounded text-sm"
-                        onClick={() => {
-                          setFormData(prev => ({ ...prev, assigneeId: '' }));
-                          setAssigneeOpen(false);
-                        }}
-                      >
-                        <div className="w-4 h-4" />
-                        <span>无</span>
-                      </div>
-                      {filteredAssigneePeople.map(person => (
-                        <div
-                          key={person.id}
-                          className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-muted/50 rounded text-sm"
-                          onClick={() => {
-                            setFormData(prev => ({ ...prev, assigneeId: person.id }));
-                            setAssigneeOpen(false);
-                          }}
-                        >
-                          <Check className={cn("w-4 h-4", formData.assigneeId === person.id ? "opacity-100" : "opacity-0")} />
-                          <span>
-                            {person.name}
-                            {person.department && (
-                              <span className="text-muted-foreground"> ({person.department})</span>
-                            )}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="px-3 py-6 text-center text-sm text-muted-foreground">
-                      未找到匹配的人员
-                    </div>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* 关联人 */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              关联人
-            </Label>
-            <Popover open={relatedPersonsOpen} onOpenChange={(open) => {
-              setRelatedPersonsOpen(open);
-              if (!open) setRelatedPersonSearch('');
-            }}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  className="w-full justify-between h-auto min-h-9"
-                >
-                  {formData.relatedPersonIds.length > 0 ? (
-                    <div className="flex flex-wrap gap-1 py-0.5">
-                      {formData.relatedPersonIds.map(id => {
-                        const person = people.find(p => p.id === id);
-                        return person ? (
-                          <Badge
-                            key={id}
-                            variant="secondary"
-                            className="gap-1 text-xs"
-                          >
-                            {person.name}
-                            <span
-                              role="button"
-                              tabIndex={0}
-                              className="ml-0.5 hover:text-destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setFormData(prev => ({
-                                  ...prev,
-                                  relatedPersonIds: prev.relatedPersonIds.filter(rid => rid !== id),
-                                }));
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.stopPropagation();
-                                  setFormData(prev => ({
-                                    ...prev,
-                                    relatedPersonIds: prev.relatedPersonIds.filter(rid => rid !== id),
-                                  }));
-                                }
-                              }}
-                            >
-                              <X className="w-3 h-3" />
-                            </span>
-                          </Badge>
-                        ) : null;
-                      })}
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">选择关联人</span>
-                  )}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start" onWheel={e => e.stopPropagation()}>
-                <div className="p-2 border-b">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="搜索关联人..."
-                      value={relatedPersonSearch}
-                      onChange={e => setRelatedPersonSearch(e.target.value)}
-                      className="pl-8 h-8"
-                    />
-                  </div>
-                </div>
-                <div className="max-h-48 overflow-y-auto">
-                  {filteredRelatedPeople.length > 0 ? (
-                    <div className="space-y-0.5 p-1">
-                      {filteredRelatedPeople.map(person => (
-                        <div
-                          key={person.id}
-                          className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-muted/50 rounded text-sm"
-                          onClick={() => {
-                            const isSelected = formData.relatedPersonIds.includes(person.id);
-                            setFormData(prev => ({
-                              ...prev,
-                              relatedPersonIds: isSelected
-                                ? prev.relatedPersonIds.filter(id => id !== person.id)
-                                : [...prev.relatedPersonIds, person.id],
-                            }));
-                          }}
-                        >
-                          <Checkbox
-                            checked={formData.relatedPersonIds.includes(person.id)}
-                            onChange={() => {}}
-                          />
-                          <span>
-                            {person.name}
-                            {person.department && (
-                              <span className="text-muted-foreground"> ({person.department})</span>
-                            )}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="px-3 py-6 text-center text-sm text-muted-foreground">
-                      {people.length === 0 ? '暂无人员，请先在人员管理中添加' : '未找到匹配的人员'}
-                    </div>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
           </div>
 
           {/* 进度备注 */}
