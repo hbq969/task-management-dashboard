@@ -218,7 +218,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
               value={formData.projectId}
               onValueChange={value => setFormData(prev => ({ ...prev, projectId: value }))}
             >
-              <SelectTrigger className="h-7 text-xs flex-1 min-w-0">
+              <SelectTrigger className="h-7 text-xs flex-[1.6] min-w-0">
                 <SelectValue placeholder="项目" />
               </SelectTrigger>
               <SelectContent>
@@ -243,7 +243,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                 });
               }}
             >
-              <SelectTrigger className="h-7 text-xs flex-1 min-w-0">
+              <SelectTrigger className="h-7 text-xs flex-[0.8] min-w-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -256,7 +256,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
               value={formData.priority}
               onValueChange={value => setFormData(prev => ({ ...prev, priority: value as Priority }))}
             >
-              <SelectTrigger className="h-7 text-xs flex-1 min-w-0">
+              <SelectTrigger className="h-7 text-xs flex-[0.6] min-w-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
