@@ -26,6 +26,14 @@ export interface Person {
   createdAt: string;
 }
 
+export interface SubTask {
+  id: string;
+  title: string;
+  status: TaskStatus;
+  progress: number; // 0-100
+  assigneeId?: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -40,6 +48,7 @@ export interface Task {
   notes: string;
   progress: number; // 0-100, default 0
   exportDescription?: boolean; // 是否导出描述到报告，默认 false
+  subtasks?: SubTask[]; // 子任务列表
   assigneeId?: string; // Person ID
   relatedPersonIds: string[]; // Related persons IDs
 }
