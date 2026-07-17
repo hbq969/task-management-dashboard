@@ -284,7 +284,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                         handleUpdateSubtask(subtask.id, { status: value, progress: newProgress });
                       }}
                     >
-                      <SelectTrigger className="h-7 text-xs w-[70px] shrink-0">
+                      <SelectTrigger className="h-7 text-xs w-[80px] shrink-0">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -293,7 +293,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                         ))}
                       </SelectContent>
                     </Select>
-                    <div className="flex items-center gap-0.5 shrink-0 w-[60px]">
+                    <div className="flex items-center gap-0.5 shrink-0 w-[72px]">
                       <Slider
                         value={[subtask.progress]}
                         onValueChange={([value]) => {
@@ -311,7 +311,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                     <Input
                       value={subtask.assignee || ''}
                       onChange={e => handleUpdateSubtask(subtask.id, { assignee: e.target.value || undefined })}
-                      className="h-7 text-xs w-[60px] shrink-0"
+                      className="h-7 text-xs w-[68px] shrink-0"
                       placeholder="负责人"
                     />
                     <Button
