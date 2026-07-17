@@ -76,13 +76,24 @@ const markdownToPlainText = (md: string): string => {
       // 收集状态和进度信息
       let status = '';
       let progress = '';
-      for (; j < lines.length && lines[j].trim().startsWith('- '); j++) {
+      // ponytail: exclude subtask lines (  - ...) from detail loop; they look the same after trim
+      for (; j < lines.length && lines[j].trim().startsWith('- ') && !lines[j].startsWith('  - '); j++) {
         const detail = lines[j].trim();
         if (detail.includes('状态：')) {
           status = detail.replace(/- 状态：/, '').trim();
         }
         if (detail.includes('进度：')) {
           progress = detail.replace(/- 进度：/, '').trim();
+        }
+      }
+
+      // 收集子任务
+      const subtasks: string[] = [];
+      for (; j < lines.length; j++) {
+        if (lines[j].startsWith('  - ')) {
+          subtasks.push(lines[j].trim().replace(/^- /, ''));
+        } else {
+          break;
         }
       }
 
@@ -99,6 +110,11 @@ const markdownToPlainText = (md: string): string => {
       // 输出描述行
       for (const desc of descriptions) {
         result.push(`  ${desc}`);
+      }
+
+      // 输出子任务
+      for (const sub of subtasks) {
+        result.push(`  - ${sub}`);
       }
 
       continue;
