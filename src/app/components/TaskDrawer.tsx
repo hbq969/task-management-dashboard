@@ -193,7 +193,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent className="!max-w-[40%] overflow-y-auto px-6">
+      <SheetContent className="!max-w-[50%] overflow-y-auto px-6">
         <SheetHeader className="px-0 pt-4">
           <SheetTitle>{isEdit ? '编辑任务' : '创建新任务'}</SheetTitle>
           <SheetDescription>
