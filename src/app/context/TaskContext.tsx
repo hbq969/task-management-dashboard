@@ -691,10 +691,22 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           if (task.notes) {
             report += `- 备注：${task.notes}\n`;
           }
-          // 子任务
+          // 子任务（排序：已完成 → 有进度降序 → 无进度 → 按状态顺序）
           if (task.subtasks && task.subtasks.length > 0) {
+            const sortedSubtasks = [...task.subtasks].sort((a, b) => {
+              const aDone = a.status === 'completed' ? 0 : 1;
+              const bDone = b.status === 'completed' ? 0 : 1;
+              if (aDone !== bDone) return aDone - bDone;
+              const aHas = a.progress > 0 ? 0 : 1;
+              const bHas = b.progress > 0 ? 0 : 1;
+              if (aHas !== bHas) return aHas - bHas;
+              if (a.progress !== b.progress) return b.progress - a.progress;
+              const aOrder = statusOrderMap[a.status] ?? 99;
+              const bOrder = statusOrderMap[b.status] ?? 99;
+              return aOrder - bOrder;
+            });
             const circles = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
-            task.subtasks.forEach((sub, i) => {
+            sortedSubtasks.forEach((sub, i) => {
               const num = i < 20 ? circles[i] : `(${i + 1})`;
               let subLine = `  ${num} ${sub.title}（${statusLabels[sub.status]}`;
               if (sub.progress > 0) subLine += `，${sub.progress}%`;
