@@ -29,6 +29,28 @@ import { CalendarIcon, X, Tag as TagIcon, Users, Check } from 'lucide-react';
 import type { Task, Priority, TaskStatus, SubTask } from '../types/task';
 import { priorityLabels, statusLabels } from '../constants/taskLabels';
 
+const statusOrderList: TaskStatus[] = [
+  'shelved', 'todo', 'pending-apply', 'review', 'researching', 'in-progress', 'processing',
+  'investigating', 'fixing', 'in-flow', 'designing', 'developing',
+  'testing', 'pending-change', 'completed'
+];
+const statusOrderMap = Object.fromEntries(statusOrderList.map((s, i) => [s, i]));
+
+const sortSubtasks = (subtasks: SubTask[]): SubTask[] => {
+  return [...subtasks].sort((a, b) => {
+    const aDone = (a.status === 'completed' || a.progress === 100) ? 0 : 1;
+    const bDone = (b.status === 'completed' || b.progress === 100) ? 0 : 1;
+    if (aDone !== bDone) return aDone - bDone;
+    const aHas = a.progress > 0 ? 0 : 1;
+    const bHas = b.progress > 0 ? 0 : 1;
+    if (aHas !== bHas) return aHas - bHas;
+    if (a.progress !== b.progress) return b.progress - a.progress;
+    const aOrder = statusOrderMap[a.status] ?? 99;
+    const bOrder = statusOrderMap[b.status] ?? 99;
+    return aOrder - bOrder;
+  });
+};
+
 interface TaskDrawerProps {
   open: boolean;
   onClose: () => void;
@@ -71,7 +93,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
         progress: task.progress ?? 0,
         assigneeId: task.assigneeId || '',
         relatedPersonIds: task.relatedPersonIds ?? [],
-        subtasks: task.subtasks ?? [],
+        subtasks: sortSubtasks(task.subtasks ?? []),
       });
     } else {
       setFormData({
@@ -164,7 +186,7 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
   const handleUpdateSubtask = (id: string, updates: Partial<SubTask>) => {
     setFormData(prev => ({
       ...prev,
-      subtasks: prev.subtasks.map(s => s.id === id ? { ...s, ...updates } : s),
+      subtasks: sortSubtasks(prev.subtasks.map(s => s.id === id ? { ...s, ...updates } : s)),
     }));
   };
 
