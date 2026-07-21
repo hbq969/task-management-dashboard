@@ -158,8 +158,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     priority: 'all',
     projectId: 'all',
     tags: [],
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
+    sortBy: 'priority',
+    sortOrder: 'asc',
     timeRange: 'all',
     searchQuery: '',
   });
