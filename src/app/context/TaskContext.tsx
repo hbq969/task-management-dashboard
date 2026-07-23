@@ -297,7 +297,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
     // Filter by status
     if (filters.status === 'incomplete') {
-      filtered = filtered.filter(task => task.status !== 'completed' && task.status !== 'shelved');
+      filtered = filtered.filter(task => task.status !== 'completed' && task.status !== 'shelved' && task.status !== 'transferred');
     } else if (filters.status !== 'all') {
       filtered = filtered.filter(task => task.status === filters.status);
     }
@@ -640,7 +640,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
       // 状态排序顺序（按显示顺序）
       const statusOrderList: TaskStatus[] = [
-        'shelved',
+        'shelved', 'transferred',
         'todo', 'pending-apply', 'review', 'researching', 'in-progress', 'processing',
         'investigating', 'fixing', 'in-flow', 'designing', 'developing',
         'testing', 'pending-change', 'completed'
@@ -703,7 +703,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
               if (a.progress !== b.progress) return b.progress - a.progress;
               const aOrder = statusOrderMap[a.status] ?? 99;
               const bOrder = statusOrderMap[b.status] ?? 99;
-              return aOrder - bOrder;
+              if (aOrder !== bOrder) return aOrder - bOrder;
+              return a.title.localeCompare(b.title, 'zh-CN');
             });
             const circles = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
             sortedSubtasks.forEach((sub, i) => {

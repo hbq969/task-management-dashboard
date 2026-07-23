@@ -55,6 +55,7 @@ import {
   Code,
   FlaskConical,
   RefreshCw,
+  Send,
   CircleDot,
   CircleDashed,
   Archive,
@@ -81,6 +82,7 @@ const statusIcons: Record<TaskStatus, React.ElementType> = {
   developing: Code,
   testing: FlaskConical,
   'pending-change': RefreshCw,
+  transferred: Send,
   completed: CheckCircle2,
 };
 
@@ -100,6 +102,7 @@ const statusIconColors: Record<TaskStatus, string> = {
   developing: 'text-indigo-500',
   testing: 'text-teal-500',
   'pending-change': 'text-orange-500',
+  transferred: 'text-slate-400',
   completed: 'text-green-500',
 };
 
@@ -125,7 +128,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
       counts[key] = tasks.filter(t => t.status === key).length;
     });
     // 添加"未完成"计数（排除已完成）
-    counts.incomplete = tasks.filter(t => t.status !== 'completed' && t.status !== 'shelved').length;
+    counts.incomplete = tasks.filter(t => t.status !== 'completed' && t.status !== 'shelved' && t.status !== 'transferred').length;
     return counts;
   }, [tasks]);
 

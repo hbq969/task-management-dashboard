@@ -30,7 +30,7 @@ import type { Task, Priority, TaskStatus, SubTask } from '../types/task';
 import { priorityLabels, statusLabels } from '../constants/taskLabels';
 
 const statusOrderList: TaskStatus[] = [
-  'shelved', 'todo', 'pending-apply', 'review', 'researching', 'in-progress', 'processing',
+  'shelved', 'transferred', 'todo', 'pending-apply', 'review', 'researching', 'in-progress', 'processing',
   'investigating', 'fixing', 'in-flow', 'designing', 'developing',
   'testing', 'pending-change', 'completed'
 ];
@@ -47,7 +47,8 @@ const sortSubtasks = (subtasks: SubTask[]): SubTask[] => {
     if (a.progress !== b.progress) return b.progress - a.progress;
     const aOrder = statusOrderMap[a.status] ?? 99;
     const bOrder = statusOrderMap[b.status] ?? 99;
-    return aOrder - bOrder;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return a.title.localeCompare(b.title, 'zh-CN');
   });
 };
 

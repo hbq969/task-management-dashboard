@@ -13,6 +13,7 @@ export type TaskStatus = 'shelved'
   | 'developing'
   | 'testing'
   | 'pending-change'
+  | 'transferred'
   | 'completed';
 
 export interface Person {

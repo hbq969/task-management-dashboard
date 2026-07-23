@@ -20,6 +20,7 @@ export const statusColors = {
   developing: 'info',
   testing: 'info',
   'pending-change': 'warning',
+  transferred: 'outline',
   completed: 'default',
 } as const;
 
@@ -45,6 +46,7 @@ export const statusLabels = {
   developing: '开发中',
   testing: '测试中',
   'pending-change': '待变更',
+  transferred: '转派',
   completed: '已完成',
 } as const;
 
