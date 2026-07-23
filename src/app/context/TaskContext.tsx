@@ -703,8 +703,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
               if (a.progress !== b.progress) return b.progress - a.progress;
               const aOrder = statusOrderMap[a.status] ?? 99;
               const bOrder = statusOrderMap[b.status] ?? 99;
-              if (aOrder !== bOrder) return aOrder - bOrder;
-              return a.title.localeCompare(b.title, 'zh-CN');
+              return aOrder - bOrder;
             });
             const circles = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
             sortedSubtasks.forEach((sub, i) => {
