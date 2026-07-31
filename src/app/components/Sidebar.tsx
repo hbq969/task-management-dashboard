@@ -65,6 +65,7 @@ import { zhCN } from 'date-fns/locale';
 import type { TaskStatus, TimeRangeFilter, Project } from '../types/task';
 import { statusLabels, timeRangeLabels, filterStatusLabels } from '../constants/taskLabels';
 import { ProjectDialog } from './ProjectDialog';
+import { sortProjectsByOrder } from '../utils/projects';
 
 // 状态图标映射
 const statusIcons: Record<TaskStatus, React.ElementType> = {
@@ -121,6 +122,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
   const [tagToDelete, setTagToDelete] = useState<string | null>(null);
   const [editProjectDialogOpen, setEditProjectDialogOpen] = useState(false);
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+  const sortedProjects = useMemo(() => sortProjectsByOrder(projects), [projects]);
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { all: tasks.length };
@@ -282,7 +284,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
                 <Folder className="w-4 h-4 mr-2" />
                 全部项目
               </Button>
-              {projects.map(project => (
+              {sortedProjects.map(project => (
                 <div
                   key={project.id}
                   className="flex items-center group"
@@ -298,6 +300,9 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
                       style={{ backgroundColor: project.color }}
                     />
                     <span className="truncate">{project.name}</span>
+                    <span className="text-[10px] text-muted-foreground shrink-0 mr-1">
+                      排序: {project.order}
+                    </span>
                     <Badge variant="outline" className="ml-auto">
                       {project.taskCount}
                     </Badge>
