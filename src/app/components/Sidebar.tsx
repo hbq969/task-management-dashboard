@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type DragEvent } from 'react';
 import { useTaskContext } from '../context/TaskContext';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
@@ -65,7 +65,7 @@ import { zhCN } from 'date-fns/locale';
 import type { TaskStatus, TimeRangeFilter, Project } from '../types/task';
 import { statusLabels, timeRangeLabels, filterStatusLabels } from '../constants/taskLabels';
 import { ProjectDialog } from './ProjectDialog';
-import { sortProjectsByOrder } from '../utils/projects';
+import { sortProjectsByOrder, swapProjectOrder } from '../utils/projects';
 
 // 状态图标映射
 const statusIcons: Record<TaskStatus, React.ElementType> = {
@@ -113,7 +113,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) {
-  const { tasks, projects, filters, updateFilters, allTags, people, deleteProject, addPredefinedTag, deleteTag } = useTaskContext();
+  const { tasks, projects, filters, updateFilters, allTags, people, deleteProject, updateProject, addPredefinedTag, deleteTag } = useTaskContext();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [addTagDialogOpen, setAddTagDialogOpen] = useState(false);
@@ -122,6 +122,8 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
   const [tagToDelete, setTagToDelete] = useState<string | null>(null);
   const [editProjectDialogOpen, setEditProjectDialogOpen] = useState(false);
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+  const [draggedProjectId, setDraggedProjectId] = useState<string | null>(null);
+  const [dragOverProjectId, setDragOverProjectId] = useState<string | null>(null);
   const sortedProjects = useMemo(() => sortProjectsByOrder(projects), [projects]);
 
   const statusCounts = useMemo(() => {
@@ -140,6 +142,44 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
 
   const handleProjectFilter = (projectId: string) => {
     updateFilters({ projectId });
+  };
+
+  const handleProjectDragStart = (event: DragEvent<HTMLDivElement>, projectId: string) => {
+    setDraggedProjectId(projectId);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', projectId);
+  };
+
+  const handleProjectDragOver = (event: DragEvent<HTMLDivElement>, projectId: string) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    if (projectId !== draggedProjectId) {
+      setDragOverProjectId(projectId);
+    }
+  };
+
+  const handleProjectDrop = (event: DragEvent<HTMLDivElement>, targetProjectId: string) => {
+    event.preventDefault();
+    const sourceProjectId = draggedProjectId || event.dataTransfer.getData('text/plain');
+
+    if (sourceProjectId && sourceProjectId !== targetProjectId) {
+      const swappedProjects = swapProjectOrder(projects, sourceProjectId, targetProjectId);
+      const sourceProject = swappedProjects.find(project => project.id === sourceProjectId);
+      const targetProject = swappedProjects.find(project => project.id === targetProjectId);
+
+      if (sourceProject && targetProject) {
+        updateProject(sourceProjectId, { order: sourceProject.order });
+        updateProject(targetProjectId, { order: targetProject.order });
+      }
+    }
+
+    setDraggedProjectId(null);
+    setDragOverProjectId(null);
+  };
+
+  const handleProjectDragEnd = () => {
+    setDraggedProjectId(null);
+    setDragOverProjectId(null);
   };
 
   const handleTagFilter = (tag: string) => {
@@ -200,7 +240,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
 
   return (
     <>
-      <div className="w-64 border-r bg-muted/30 flex flex-col h-full overflow-hidden">
+      <div className="w-72 border-r bg-muted/30 flex flex-col h-full overflow-hidden">
       <div className="shrink-0 p-4 border-b h-16">
         <h1 className="font-semibold text-lg flex items-center gap-2">
           <ListTodo className="w-5 h-5 text-primary" />
@@ -213,7 +253,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
           {/* 状态筛选 - 紧凑网格布局 */}
           <div>
             <h2 className="text-xs font-medium mb-3 text-muted-foreground">状态</h2>
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-3 gap-1.5">
               <Button
                 variant={filters.status === 'all' ? 'secondary' : 'ghost'}
                 className="grid grid-cols-[20px_1fr_28px] items-center h-8 text-xs w-full"
@@ -287,11 +327,21 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
               {sortedProjects.map(project => (
                 <div
                   key={project.id}
-                  className="flex items-center group"
+                  draggable
+                  title="拖拽项目可交换排序"
+                  onDragStart={event => handleProjectDragStart(event, project.id)}
+                  onDragOver={event => handleProjectDragOver(event, project.id)}
+                  onDrop={event => handleProjectDrop(event, project.id)}
+                  onDragEnd={handleProjectDragEnd}
+                  className={`flex items-center group cursor-grab active:cursor-grabbing ${
+                    draggedProjectId === project.id ? 'opacity-50' : ''
+                  } ${
+                    dragOverProjectId === project.id ? 'rounded-md ring-1 ring-primary bg-primary/5' : ''
+                  }`}
                 >
                   <Button
                     variant={filters.projectId === project.id ? 'secondary' : 'ghost'}
-                    className="flex-1 justify-start text-xs"
+                    className="min-w-0 flex-1 justify-start text-xs"
                     size="sm"
                     onClick={() => handleProjectFilter(project.id)}
                   >
@@ -312,7 +362,9 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="h-7 w-7 p-0 opacity-100 transition-opacity"
+                        aria-label={`项目操作：${project.name}`}
+                        title="项目操作"
                       >
                         <MoreVertical className="h-3.5 w-3.5" />
                       </Button>
