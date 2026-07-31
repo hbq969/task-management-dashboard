@@ -240,7 +240,7 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
 
   return (
     <>
-      <div className="w-72 border-r bg-muted/30 flex flex-col h-full overflow-hidden">
+      <div className="w-80 border-r bg-muted/30 flex flex-col h-full overflow-hidden">
       <div className="shrink-0 p-4 border-b h-16">
         <h1 className="font-semibold text-lg flex items-center gap-2">
           <ListTodo className="w-5 h-5 text-primary" />
