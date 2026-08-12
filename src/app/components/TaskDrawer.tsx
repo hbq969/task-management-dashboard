@@ -423,11 +423,12 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                     >
                       {subtask.status === 'completed' && <Check className="size-2.5" />}
                     </button>
-                    <Input
+                    <Textarea
                       value={subtask.title}
                       onChange={e => handleUpdateSubtask(subtask.id, { title: e.target.value })}
-                      className="h-7 text-xs flex-1 min-w-0"
+                      className="min-h-7 text-xs flex-1 min-w-0 py-1"
                       placeholder="子任务标题"
+                      rows={1}
                     />
                     <Select
                       value={subtask.status}
