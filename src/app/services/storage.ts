@@ -4,12 +4,14 @@ const STORAGE_KEY = 'todo-tasks';
 const PROJECTS_KEY = 'todo-projects';
 const PEOPLE_KEY = 'todo-people';
 const PREDEFINED_TAGS_KEY = 'todo-predefined-tags';
+const WEEK_TASKS_KEY = 'todo-week-tasks';
 
 export interface StorageData {
   tasks: Task[];
   projects: Project[];
   people: Person[];
   predefinedTags?: string[];
+  weekTasks?: Task[];
   exportedAt?: string;
 }
 
@@ -57,6 +59,7 @@ export const readData = async (): Promise<StorageData | null> => {
       const projects = localStorage.getItem(PROJECTS_KEY);
       const people = localStorage.getItem(PEOPLE_KEY);
       const predefinedTags = localStorage.getItem(PREDEFINED_TAGS_KEY);
+      const weekTasks = localStorage.getItem(WEEK_TASKS_KEY);
 
       if (!tasks) {
         return null;
@@ -67,6 +70,7 @@ export const readData = async (): Promise<StorageData | null> => {
         projects: projects ? JSON.parse(projects) : [],
         people: people ? JSON.parse(people) : [],
         predefinedTags: predefinedTags ? JSON.parse(predefinedTags) : [],
+        weekTasks: weekTasks ? JSON.parse(weekTasks) : [],
       };
     } catch (error) {
       console.error('Failed to read data from localStorage:', error);
@@ -110,6 +114,9 @@ export const writeData = async (data: StorageData): Promise<boolean> => {
       if (data.predefinedTags) {
         localStorage.setItem(PREDEFINED_TAGS_KEY, JSON.stringify(data.predefinedTags));
       }
+      if (data.weekTasks) {
+        localStorage.setItem(WEEK_TASKS_KEY, JSON.stringify(data.weekTasks));
+      }
       return true;
     } catch (error) {
       console.error('Failed to write data to localStorage:', error);
@@ -124,6 +131,7 @@ export const migrateFromLocalStorage = async (): Promise<StorageData | null> => 
     const projects = localStorage.getItem(PROJECTS_KEY);
     const people = localStorage.getItem(PEOPLE_KEY);
     const predefinedTags = localStorage.getItem(PREDEFINED_TAGS_KEY);
+    const weekTasks = localStorage.getItem(WEEK_TASKS_KEY);
 
     if (!tasks) {
       return null;
@@ -134,6 +142,7 @@ export const migrateFromLocalStorage = async (): Promise<StorageData | null> => 
       projects: projects ? JSON.parse(projects) : [],
       people: people ? JSON.parse(people) : [],
       predefinedTags: predefinedTags ? JSON.parse(predefinedTags) : [],
+      weekTasks: weekTasks ? JSON.parse(weekTasks) : [],
     };
 
     // 迁移到文件存储
@@ -145,6 +154,7 @@ export const migrateFromLocalStorage = async (): Promise<StorageData | null> => 
         localStorage.removeItem(PROJECTS_KEY);
         localStorage.removeItem(PEOPLE_KEY);
         localStorage.removeItem(PREDEFINED_TAGS_KEY);
+        localStorage.removeItem(WEEK_TASKS_KEY);
         console.log('Data migrated from localStorage to file storage');
       }
     }
@@ -161,4 +171,5 @@ export const clearLocalStorage = (): void => {
   localStorage.removeItem(PROJECTS_KEY);
   localStorage.removeItem(PEOPLE_KEY);
   localStorage.removeItem(PREDEFINED_TAGS_KEY);
+  localStorage.removeItem(WEEK_TASKS_KEY);
 };

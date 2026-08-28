@@ -6,12 +6,18 @@ import {
   Person,
   getTimeRangeBounds,
   TaskStatus,
+  SubTask,
+  ViewMode,
 } from '../types/task';
 import { statusLabels } from '../constants/taskLabels';
 import { readData, writeData, migrateFromLocalStorage, StorageData } from '../services/storage';
 
 interface TaskContextType {
   tasks: Task[];
+  weekTasks: Task[];
+  activeTasks: Task[];
+  viewMode: ViewMode;
+  setViewMode: (mode: ViewMode) => void;
   projects: Project[];
   people: Person[];
   filters: FilterOptions;
@@ -60,6 +66,10 @@ interface TaskContextType {
   // Pagination
   setCurrentPage: (page: number) => void;
   setPageSize: (size: number) => void;
+  // Weekly view
+  addToWeekTasks: (taskIds: string[]) => { added: number; skipped: number };
+  mergeWeekToAll: () => { updated: number; added: number };
+  clearWeekTasks: () => void;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -148,6 +158,8 @@ const getSampleTasks = (): Task[] => {
 
 export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [weekTasks, setWeekTasks] = useState<Task[]>([]);
+  const [viewMode, setViewModeState] = useState<ViewMode>('all');
   const [projects, setProjects] = useState<Project[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [predefinedTags, setPredefinedTags] = useState<string[]>([]);
@@ -181,13 +193,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
       if (data) {
         // 迁移旧任务字段
-        const migratedTasks = data.tasks.map((task: Task) => ({
+        const migrateTask = (task: Task): Task => ({
           ...task,
           progress: task.progress ?? 0,
           relatedPersonIds: task.relatedPersonIds ?? [],
           subtasks: task.subtasks ?? [],
-        }));
+        });
+        const migratedTasks = data.tasks.map(migrateTask);
         setTasks(migratedTasks);
+        setWeekTasks((data.weekTasks ?? []).map(migrateTask));
         setProjects(data.projects);
         setPeople(data.people);
         setPredefinedTags(data.predefinedTags ?? []);
@@ -217,12 +231,23 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setCurrentPage(1);
   }, []);
 
+  // 视图切换时重置分页和选择
+  const setViewMode = useCallback((mode: ViewMode) => {
+    setViewModeState(mode);
+    setCurrentPage(1);
+    setSelectedTaskIds([]);
+  }, []);
+
+  // 当前视图的任务列表与 setter
+  const activeTasks = viewMode === 'week' ? weekTasks : tasks;
+  const setActiveTasks = viewMode === 'week' ? setWeekTasks : setTasks;
+
   // 统一数据持久化
   useEffect(() => {
     if (isLoaded) {
-      writeData({ tasks, projects, people, predefinedTags });
+      writeData({ tasks, projects, people, predefinedTags, weekTasks });
     }
-  }, [tasks, projects, people, predefinedTags, isLoaded]);
+  }, [tasks, projects, people, predefinedTags, weekTasks, isLoaded]);
 
   // Update project task counts when tasks change
   useEffect(() => {
@@ -234,7 +259,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     );
   }, [tasks]);
 
-  // Task CRUD operations
+  // Task CRUD operations（作用于当前视图列表：全量或周视图）
   const addTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newTask: Task = {
       ...taskData,
@@ -242,23 +267,23 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    setTasks(prev => [newTask, ...prev]);
-  }, []);
+    setActiveTasks(prev => [newTask, ...prev]);
+  }, [viewMode]);
 
   const updateTask = useCallback((id: string, updates: Partial<Task>) => {
-    setTasks(prev =>
+    setActiveTasks(prev =>
       prev.map(task =>
         task.id === id
           ? { ...task, ...updates, updatedAt: new Date().toISOString() }
           : task
       )
     );
-  }, []);
+  }, [viewMode]);
 
   const deleteTask = useCallback((id: string) => {
-    setTasks(prev => prev.filter(task => task.id !== id));
+    setActiveTasks(prev => prev.filter(task => task.id !== id));
     setSelectedTaskIds(prev => prev.filter(taskId => taskId !== id));
-  }, []);
+  }, [viewMode]);
 
   // Project operations
   const addProject = useCallback((projectData: Omit<Project, 'id' | 'taskCount'>) => {
@@ -280,9 +305,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const deleteProject = useCallback((id: string) => {
-    // Delete project and its tasks
+    // Delete project and its tasks（全量与周视图都清理）
     setProjects(prev => prev.filter(project => project.id !== id));
     setTasks(prev => prev.filter(task => task.projectId !== id));
+    setWeekTasks(prev => prev.filter(task => task.projectId !== id));
     // Clear project filter if deleted project was selected
     setFilters(prev => prev.projectId === id ? { ...prev, projectId: 'all' } : prev);
   }, []);
@@ -293,7 +319,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const getFilteredTasks = useCallback(() => {
-    let filtered = [...tasks];
+    let filtered = [...activeTasks];
 
     // Filter by status
     if (filters.status === 'incomplete') {
@@ -374,7 +400,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     });
 
     return filtered;
-  }, [tasks, filters]);
+  }, [activeTasks, filters]);
 
   // People management
   const addPerson = useCallback((personData: Omit<Person, 'id' | 'createdAt'>) => {
@@ -394,14 +420,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   const deletePerson = useCallback((id: string) => {
     setPeople(prev => prev.filter(person => person.id !== id));
-    // Clear this person from tasks
-    setTasks(prev =>
+    // Clear this person from tasks（全量与周视图都清理）
+    const clearPerson = (prev: Task[]) =>
       prev.map(task => ({
         ...task,
         assigneeId: task.assigneeId === id ? undefined : task.assigneeId,
         relatedPersonIds: task.relatedPersonIds.filter(pid => pid !== id),
-      }))
-    );
+      }));
+    setTasks(clearPerson);
+    setWeekTasks(clearPerson);
   }, []);
 
   // Selection operations
@@ -420,10 +447,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setSelectedTaskIds([]);
   }, []);
 
-  // Batch operations
+  // Batch operations（作用于当前视图列表）
   const batchUpdateStatus = useCallback(
     (status: Task['status']) => {
-      setTasks(prev =>
+      setActiveTasks(prev =>
         prev.map(task =>
           selectedTaskIds.includes(task.id)
             ? { ...task, status, updatedAt: new Date().toISOString() }
@@ -432,17 +459,17 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       );
       clearSelection();
     },
-    [selectedTaskIds, clearSelection]
+    [selectedTaskIds, clearSelection, viewMode]
   );
 
   const batchDelete = useCallback(() => {
-    setTasks(prev => prev.filter(task => !selectedTaskIds.includes(task.id)));
+    setActiveTasks(prev => prev.filter(task => !selectedTaskIds.includes(task.id)));
     clearSelection();
-  }, [selectedTaskIds, clearSelection]);
+  }, [selectedTaskIds, clearSelection, viewMode]);
 
   const batchMoveProject = useCallback(
     (projectId: string) => {
-      setTasks(prev =>
+      setActiveTasks(prev =>
         prev.map(task =>
           selectedTaskIds.includes(task.id)
             ? { ...task, projectId, updatedAt: new Date().toISOString() }
@@ -451,12 +478,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       );
       clearSelection();
     },
-    [selectedTaskIds, clearSelection]
+    [selectedTaskIds, clearSelection, viewMode]
   );
 
   const batchAddTags = useCallback(
     (tags: string[]) => {
-      setTasks(prev =>
+      setActiveTasks(prev =>
         prev.map(task =>
           selectedTaskIds.includes(task.id)
             ? {
@@ -469,7 +496,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       );
       clearSelection();
     },
-    [selectedTaskIds, clearSelection]
+    [selectedTaskIds, clearSelection, viewMode]
   );
 
   // 获取选中任务的标签状态：'all'=全部都有, 'some'=部分有, 'none'=都没有
@@ -489,7 +516,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const batchToggleTag = useCallback(
     (tag: string) => {
       const status = getSelectedTasksTagStatus(tag);
-      setTasks(prev =>
+      setActiveTasks(prev =>
         prev.map(task =>
           selectedTaskIds.includes(task.id)
             ? {
@@ -504,13 +531,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       );
       // 不清除选择，允许继续操作
     },
-    [selectedTaskIds, getSelectedTasksTagStatus]
+    [selectedTaskIds, getSelectedTasksTagStatus, viewMode]
   );
 
   // 直接从选中任务中移除标签（不检查状态，用于确认对话框）
   const removeTagFromSelectedTasks = useCallback(
     (tag: string) => {
-      setTasks(prev =>
+      setActiveTasks(prev =>
         prev.map(task =>
           selectedTaskIds.includes(task.id)
             ? {
@@ -529,7 +556,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         return prev;
       });
     },
-    [selectedTaskIds]
+    [selectedTaskIds, viewMode]
   );
 
   // Tag management
@@ -541,14 +568,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const deleteTag = useCallback((tag: string) => {
-    // 从任务中移除
-    setTasks(prev =>
+    // 从任务中移除（全量与周视图都清理）
+    const removeTag = (prev: Task[]) =>
       prev.map(task => ({
         ...task,
         tags: task.tags.filter(t => t !== tag),
         updatedAt: new Date().toISOString(),
-      }))
-    );
+      }));
+    setTasks(removeTag);
+    setWeekTasks(removeTag);
     // 从预定义中移除
     setPredefinedTags(prev => prev.filter(t => t !== tag));
   }, []);
@@ -559,10 +587,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       tasks,
       projects,
       people,
+      weekTasks,
       exportedAt: new Date().toISOString(),
     };
     return JSON.stringify(data, null, 2);
-  }, [tasks, projects, people]);
+  }, [tasks, projects, people, weekTasks]);
 
   const importData = useCallback(
     (dataString: string): { success: boolean; message: string } => {
@@ -576,14 +605,16 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Migrate tasks to include new fields
-        const migratedTasks = data.tasks.map((task: Task) => ({
+        const migrateTask = (task: Task): Task => ({
           ...task,
           progress: task.progress ?? 0,
           relatedPersonIds: task.relatedPersonIds ?? [],
           subtasks: task.subtasks ?? [],
-        }));
+        });
+        const migratedTasks = data.tasks.map(migrateTask);
 
         setTasks(migratedTasks);
+        setWeekTasks((data.weekTasks ?? []).map(migrateTask));
         setProjects(data.projects);
         if (data.people && Array.isArray(data.people)) {
           setPeople(data.people);
@@ -602,8 +633,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       const formatDate = (date: Date) =>
         date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 
+      // 周报告直接使用周视图任务，月/季报告使用全量任务
       // Filter by tags if specified (no time filtering)
-      let reportTasks = tasks;
+      let reportTasks = _type === 'weekly' ? weekTasks : tasks;
       if (filterTags && filterTags.length > 0) {
         reportTasks = reportTasks.filter(task =>
           filterTags.some(tag => task.tags.includes(tag))
@@ -721,18 +753,139 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
       return report;
     },
-    [tasks, projects, people]
+    [tasks, weekTasks, projects, people]
   );
 
   const allTags = useMemo(() => {
-    const taskTags = tasks.flatMap(task => task.tags);
+    const taskTags = [...tasks, ...weekTasks].flatMap(task => task.tags);
     return Array.from(new Set([...predefinedTags, ...taskTags])).sort();
-  }, [tasks, predefinedTags]);
+  }, [tasks, weekTasks, predefinedTags]);
+
+  // 从全量任务中勾选一组，拷贝创建为周工作待办
+  const addToWeekTasks = useCallback(
+    (taskIds: string[]): { added: number; skipped: number } => {
+      let added = 0;
+      let skipped = 0;
+      const next = [...weekTasks];
+      for (const id of taskIds) {
+        const master = tasks.find(t => t.id === id);
+        if (!master) {
+          skipped++;
+          continue;
+        }
+        // 已存在的周视图任务（同一来源）跳过，避免重复
+        if (next.some(t => t.sourceTaskId === id)) {
+          skipped++;
+          continue;
+        }
+        const copy: Task = {
+          ...master,
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+          sourceTaskId: id,
+          subtasks: (master.subtasks ?? []).map(s => ({
+            ...s,
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+          })),
+          updatedAt: new Date().toISOString(),
+        };
+        next.push(copy);
+        added++;
+      }
+      setWeekTasks(next);
+      return { added, skipped };
+    },
+    [tasks, weekTasks]
+  );
+
+  // 子任务合并：标题相同覆盖，多出来的新增，全量有而周视图没有的保留
+  const mergeSubtasks = useCallback((masterSubs: SubTask[], weekSubs: SubTask[]): SubTask[] => {
+    const result = [...masterSubs];
+    for (const ws of weekSubs) {
+      const idx = result.findIndex(ms => ms.title === ws.title);
+      if (idx >= 0) {
+        // 标题相同 → 覆盖（保留全量子任务 id）
+        result[idx] = {
+          ...result[idx],
+          title: ws.title,
+          status: ws.status,
+          progress: ws.progress,
+          assignee: ws.assignee,
+        };
+      } else {
+        // 多出来的 → 新增
+        result.push({
+          ...ws,
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        });
+      }
+    }
+    return result;
+  }, []);
+
+  // 周视图更新进全量任务列表
+  const mergeWeekToAll = useCallback((): { updated: number; added: number } => {
+    let updated = 0;
+    let added = 0;
+    let newTasks = [...tasks];
+    let newWeekTasks = [...weekTasks];
+
+    for (const wt of weekTasks) {
+      const existing = newTasks.find(t => wt.sourceTaskId && t.id === wt.sourceTaskId);
+      if (existing) {
+        newTasks = newTasks.map(t =>
+          t.id === existing.id
+            ? {
+                ...t,
+                title: wt.title,
+                description: wt.description,
+                dueDate: wt.dueDate,
+                priority: wt.priority,
+                tags: wt.tags,
+                status: wt.status,
+                projectId: wt.projectId,
+                progress: wt.progress,
+                notes: wt.notes,
+                assigneeId: wt.assigneeId,
+                relatedPersonIds: wt.relatedPersonIds,
+                exportDescription: wt.exportDescription,
+                subtasks: mergeSubtasks(t.subtasks ?? [], wt.subtasks ?? []),
+                updatedAt: new Date().toISOString(),
+              }
+            : t
+        );
+        updated++;
+      } else {
+        // 新增到全量：sourceTaskId 指向自身 id，避免再次合并时重复新增
+        const newTask: Task = {
+          ...wt,
+          sourceTaskId: wt.id,
+          updatedAt: new Date().toISOString(),
+        };
+        newTasks = [newTask, ...newTasks];
+        newWeekTasks = newWeekTasks.map(t =>
+          t.id === wt.id ? { ...t, sourceTaskId: wt.id } : t
+        );
+        added++;
+      }
+    }
+
+    setTasks(newTasks);
+    setWeekTasks(newWeekTasks);
+    return { updated, added };
+  }, [tasks, weekTasks, mergeSubtasks]);
+
+  const clearWeekTasks = useCallback(() => {
+    setWeekTasks([]);
+  }, []);
 
   return (
     <TaskContext.Provider
       value={{
         tasks,
+        weekTasks,
+        activeTasks,
+        viewMode,
+        setViewMode,
         projects,
         people,
         filters,
@@ -769,6 +922,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         generateReport,
         setCurrentPage,
         setPageSize,
+        addToWeekTasks,
+        mergeWeekToAll,
+        clearWeekTasks,
       }}
     >
       {children}

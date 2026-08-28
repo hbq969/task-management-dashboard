@@ -24,7 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from './ui/tooltip';
-import { Plus, ArrowUpDown, Search, X, Database, FileText, Tag, Trash2, Flag } from 'lucide-react';
+import { Plus, ArrowUpDown, Search, X, Database, FileText, Tag, Trash2, Flag, CalendarDays, CalendarPlus, Merge } from 'lucide-react';
 import type { Priority } from '../types/task';
 import { useState, useRef, useEffect } from 'react';
 
@@ -32,30 +32,47 @@ interface TaskToolbarProps {
   onCreateTask: () => void;
   onOpenDataManager?: () => void;
   onOpenReportExport?: () => void;
+  onActionMessage?: (msg: string) => void;
 }
 
 export function TaskToolbar({
   onCreateTask,
   onOpenDataManager,
   onOpenReportExport,
+  onActionMessage,
 }: TaskToolbarProps) {
   const {
     filters,
     updateFilters,
-    getFilteredTasks,
     selectedTaskIds,
     allTags,
     batchToggleTag,
     getSelectedTasksTagStatus,
     removeTagFromSelectedTasks,
     batchDelete,
+    viewMode,
+    setViewMode,
+    weekTasks,
+    addToWeekTasks,
+    mergeWeekToAll,
+    clearWeekTasks,
+    clearSelection,
   } = useTaskContext();
-  const taskCount = getFilteredTasks().length;
   const [showTagInput, setShowTagInput] = useState(false);
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
   const [tagToRemove, setTagToRemove] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [mergeConfirmOpen, setMergeConfirmOpen] = useState(false);
+  const [clearWeekConfirmOpen, setClearWeekConfirmOpen] = useState(false);
+  const actionMsgTimer = useRef<ReturnType<typeof setTimeout>>(null);
   const tagInputRef = useRef<HTMLDivElement>(null);
+
+  // 短暂显示操作结果提示（提升到 Dashboard，渲染在任务列表"全选"栏上方）
+  const showActionMessage = (msg: string) => {
+    if (actionMsgTimer.current) clearTimeout(actionMsgTimer.current);
+    onActionMessage?.(msg);
+    actionMsgTimer.current = setTimeout(() => onActionMessage?.(''), 3000);
+  };
 
   // 点击外部关闭标签输入
   useEffect(() => {
@@ -88,6 +105,32 @@ export function TaskToolbar({
 
   const clearSearch = () => {
     updateFilters({ searchQuery: '' });
+  };
+
+  // 将勾选的全量任务加入周视图
+  const handleAddToWeek = () => {
+    const result = addToWeekTasks(selectedTaskIds);
+    clearSelection();
+    if (result.added > 0) {
+      showActionMessage(`已添加 ${result.added} 个任务到周视图${result.skipped > 0 ? `，跳过 ${result.skipped} 个已存在` : ''}`);
+    } else {
+      showActionMessage('选中的任务已在周视图中');
+    }
+  };
+
+  // 确认合并回全量
+  const handleMergeConfirm = () => {
+    const result = mergeWeekToAll();
+    setMergeConfirmOpen(false);
+    showActionMessage(`已合并到全量任务列表：更新 ${result.updated} 个，新增 ${result.added} 个`);
+  };
+
+  // 确认清空周视图
+  const handleClearWeekConfirm = () => {
+    clearWeekTasks();
+    setClearWeekConfirmOpen(false);
+    clearSelection();
+    showActionMessage('周视图已清空');
   };
 
   // 点击标签即时切换
@@ -156,13 +199,82 @@ export function TaskToolbar({
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* 合并回全量确认对话框 */}
+      <AlertDialog open={mergeConfirmOpen} onOpenChange={setMergeConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认合并周视图到全量任务？</AlertDialogTitle>
+            <AlertDialogDescription>
+              周视图共 {weekTasks.length} 个任务。合并后：
+            </AlertDialogDescription>
+            <ul className="text-muted-foreground text-sm list-disc ml-5 mt-1 space-y-1">
+              <li>周视图中对应全量的任务将被覆盖（保留全量任务的 ID）</li>
+              <li>子任务按标题比对：标题相同覆盖，多出来的新增</li>
+              <li>周视图中新建的任务将作为新任务加入全量</li>
+            </ul>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleMergeConfirm}>确认合并</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 清空周视图确认对话框 */}
+      <AlertDialog open={clearWeekConfirmOpen} onOpenChange={setClearWeekConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认清空周视图？</AlertDialogTitle>
+            <AlertDialogDescription>
+              将删除周视图中的 {weekTasks.length} 个任务。若未先合并回全量，周视图中的改动将丢失。此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearWeekConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              确认清空
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <div className="shrink-0">
-            <h2 className="text-lg font-semibold whitespace-nowrap">任务列表</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              共 {taskCount} 个任务
-            </p>
+            {/* 视图切换 */}
+            <div className="flex items-center bg-muted rounded-lg p-0.5">
+              <button
+                type="button"
+                onClick={() => setViewMode('all')}
+                className={`px-3 py-1 text-sm rounded-md transition-colors whitespace-nowrap ${
+                  viewMode === 'all'
+                    ? 'bg-background shadow-sm font-medium'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                任务列表
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('week')}
+                className={`px-3 py-1 text-sm rounded-md transition-colors whitespace-nowrap flex items-center gap-1 ${
+                  viewMode === 'week'
+                    ? 'bg-background shadow-sm font-medium'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <CalendarDays className="w-4 h-4" />
+                周视图
+                {weekTasks.length > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                    {weekTasks.length}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* 搜索框 */}
@@ -186,9 +298,50 @@ export function TaskToolbar({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          {/* 周视图操作 */}
+          {viewMode === 'week' && (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => setMergeConfirmOpen(true)}
+                  >
+                    <Merge className="w-4 h-4 mr-1" />
+                    合并回全量
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>将周视图更新进全量任务列表</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setClearWeekConfirmOpen(true)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>清空周视图</TooltipContent>
+              </Tooltip>
+            </>
+          )}
+
           {/* 批量操作 */}
           {selectedTaskIds.length > 0 && (
             <>
+              {viewMode === 'all' && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" onClick={handleAddToWeek}>
+                      <CalendarPlus className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>加入周视图 ({selectedTaskIds.length})</TooltipContent>
+                </Tooltip>
+              )}
               <div className="relative" ref={tagInputRef}>
                 <Tooltip>
                   <TooltipTrigger asChild>

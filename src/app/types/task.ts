@@ -1,3 +1,5 @@
+export type ViewMode = 'all' | 'week';
+
 export type Priority = 'urgent' | 'high' | 'medium' | 'low';
 export type TaskStatus = 'shelved'
   | 'todo'
@@ -52,6 +54,7 @@ export interface Task {
   subtasks?: SubTask[]; // 子任务列表
   assigneeId?: string; // Person ID
   relatedPersonIds: string[]; // Related persons IDs
+  sourceTaskId?: string; // 周视图任务关联的全量任务 ID（从全量勾选加入时记录）
 }
 
 export interface Project {

@@ -113,7 +113,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) {
-  const { tasks, projects, filters, updateFilters, allTags, people, deleteProject, updateProject, addPredefinedTag, deleteTag } = useTaskContext();
+  const { activeTasks, projects, filters, updateFilters, allTags, people, deleteProject, updateProject, addPredefinedTag, deleteTag } = useTaskContext();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [addTagDialogOpen, setAddTagDialogOpen] = useState(false);
@@ -127,14 +127,14 @@ export function Sidebar({ onCreateProject, onOpenPersonManager }: SidebarProps) 
   const sortedProjects = useMemo(() => sortProjectsByOrder(projects), [projects]);
 
   const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: tasks.length };
+    const counts: Record<string, number> = { all: activeTasks.length };
     (Object.keys(statusLabels) as TaskStatus[]).forEach(key => {
-      counts[key] = tasks.filter(t => t.status === key).length;
+      counts[key] = activeTasks.filter(t => t.status === key).length;
     });
     // 添加"未完成"计数（排除已完成）
-    counts.incomplete = tasks.filter(t => t.status !== 'completed' && t.status !== 'shelved' && t.status !== 'transferred').length;
+    counts.incomplete = activeTasks.filter(t => t.status !== 'completed' && t.status !== 'shelved' && t.status !== 'transferred').length;
     return counts;
-  }, [tasks]);
+  }, [activeTasks]);
 
   const handleStatusFilter = (status: TaskStatus | 'all' | 'incomplete') => {
     updateFilters({ status });

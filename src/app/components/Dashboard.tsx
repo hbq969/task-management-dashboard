@@ -17,6 +17,7 @@ function DashboardContent() {
   const [dataManagerOpen, setDataManagerOpen] = useState(false);
   const [reportExportOpen, setReportExportOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [actionMessage, setActionMessage] = useState('');
 
   const handleCreateTask = () => {
     setEditingTask(null);
@@ -48,11 +49,12 @@ function DashboardContent() {
           onCreateTask={handleCreateTask}
           onOpenDataManager={() => setDataManagerOpen(true)}
           onOpenReportExport={() => setReportExportOpen(true)}
+          onActionMessage={setActionMessage}
         />
 
         {/* 任务列表 */}
         <div className="flex-1 overflow-y-auto p-6">
-          <TaskList onEditTask={handleEditTask} />
+          <TaskList onEditTask={handleEditTask} actionMessage={actionMessage} />
         </div>
       </div>
 

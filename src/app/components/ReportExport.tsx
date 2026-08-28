@@ -153,7 +153,7 @@ export function ReportExport({ open, onClose }: ReportExportProps) {
             <FileText className="w-5 h-5" />
             报告导出
           </DialogTitle>
-          <DialogDescription>生成任务报告并导出</DialogDescription>
+          <DialogDescription>生成周报告并导出（直接使用周视图任务）</DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-[220px_1fr] gap-4 min-h-0 flex-1 mt-4">

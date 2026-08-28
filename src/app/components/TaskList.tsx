@@ -51,10 +51,11 @@ import { priorityColors, priorityLabels, statusLabels, statusColors, getProgress
 
 interface TaskListProps {
   onEditTask: (task: Task) => void;
+  actionMessage?: string;
 }
 
-export function TaskList({ onEditTask }: TaskListProps) {
-  const { getFilteredTasks, updateTask, deleteTask, projects, people, currentPage, pageSize, setCurrentPage, setPageSize, selectedTaskIds, toggleTaskSelection, selectAllTasks, clearSelection } = useTaskContext();
+export function TaskList({ onEditTask, actionMessage }: TaskListProps) {
+  const { getFilteredTasks, updateTask, deleteTask, projects, people, currentPage, pageSize, setCurrentPage, setPageSize, selectedTaskIds, toggleTaskSelection, selectAllTasks, clearSelection, viewMode, setViewMode } = useTaskContext();
   const tasks = getFilteredTasks();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
@@ -117,14 +118,33 @@ export function TaskList({ onEditTask }: TaskListProps) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
         <FileText className="w-16 h-16 mb-4 opacity-20" />
-        <p className="text-lg">暂无任务</p>
-        <p className="text-sm">点击"创建任务"按钮开始添加</p>
+        <p className="text-lg">{viewMode === 'week' ? '周视图暂无任务' : '暂无任务'}</p>
+        <p className="text-sm">
+          {viewMode === 'week' ? (
+            <>
+              到<button className="text-primary underline mx-0.5" onClick={() => setViewMode('all')}>任务列表</button>
+              勾选任务加入周视图，或点击"创建任务"直接创建
+            </>
+          ) : (
+            '点击"创建任务"按钮开始添加'
+          )}
+        </p>
       </div>
     );
   }
 
   return (
     <>
+      {/* 任务计数与操作提示 */}
+      {tasks.length > 0 && (
+        <div className="mb-2 flex items-baseline gap-2">
+          <span className="text-xs text-muted-foreground">共 {tasks.length} 个任务</span>
+          {actionMessage && (
+            <span className="text-xs text-primary">{actionMessage}</span>
+          )}
+        </div>
+      )}
+
       {/* 全选工具栏 */}
       {tasks.length > 0 && (
         <div className="flex items-center justify-between mb-3 p-2 bg-secondary/10 rounded-md border">
