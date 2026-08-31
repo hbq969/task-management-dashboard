@@ -38,6 +38,7 @@ import {
   Edit,
   Trash2,
   Calendar,
+  CalendarDays,
   Tag as TagIcon,
   Clock,
   FileText,
@@ -55,7 +56,7 @@ interface TaskListProps {
 }
 
 export function TaskList({ onEditTask, actionMessage }: TaskListProps) {
-  const { getFilteredTasks, updateTask, deleteTask, projects, people, currentPage, pageSize, setCurrentPage, setPageSize, selectedTaskIds, toggleTaskSelection, selectAllTasks, clearSelection, viewMode, setViewMode } = useTaskContext();
+  const { getFilteredTasks, updateTask, deleteTask, projects, people, currentPage, pageSize, setCurrentPage, setPageSize, selectedTaskIds, toggleTaskSelection, selectAllTasks, clearSelection, viewMode, setViewMode, weekSourceTaskIds } = useTaskContext();
   const tasks = getFilteredTasks();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
@@ -242,6 +243,14 @@ export function TaskList({ onEditTask, actionMessage }: TaskListProps) {
                                 }`}
                                 onClick={() => onEditTask(task)}
                               >
+                                {weekSourceTaskIds.has(task.id) && (
+                                  <span
+                                    className="inline-flex items-center justify-center size-4 rounded-full bg-primary/15 text-primary mr-1.5 align-middle shrink-0"
+                                    title="该任务已在周视图中"
+                                  >
+                                    <CalendarDays className="w-2.5 h-2.5" />
+                                  </span>
+                                )}
                                 {task.title}
                               </div>
                             </TooltipTrigger>

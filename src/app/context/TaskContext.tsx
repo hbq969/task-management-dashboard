@@ -16,6 +16,7 @@ interface TaskContextType {
   tasks: Task[];
   weekTasks: Task[];
   activeTasks: Task[];
+  weekSourceTaskIds: ReadonlySet<string>; // 已在周视图的全量任务 ID 集合
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
   projects: Project[];
@@ -878,12 +879,19 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setWeekTasks([]);
   }, []);
 
+  // 已在周视图的全量任务 ID 集合（由周视图任务的 sourceTaskId 推导）
+  const weekSourceTaskIds = useMemo(
+    () => new Set(weekTasks.map(t => t.sourceTaskId).filter((id): id is string => !!id)),
+    [weekTasks]
+  );
+
   return (
     <TaskContext.Provider
       value={{
         tasks,
         weekTasks,
         activeTasks,
+        weekSourceTaskIds,
         viewMode,
         setViewMode,
         projects,
