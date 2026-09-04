@@ -30,7 +30,7 @@ import type { Task, Priority, TaskStatus, SubTask } from '../types/task';
 import { priorityLabels, statusLabels } from '../constants/taskLabels';
 
 const statusOrderList: TaskStatus[] = [
-  'shelved', 'transferred', 'todo', 'pending-apply', 'review', 'researching', 'in-progress', 'processing',
+  'shelved', 'transferred', 'todo', 'pending-apply', 'review', 'researching', 'in-progress', 'daily', 'processing',
   'investigating', 'fixing', 'in-flow', 'designing', 'developing',
   'testing', 'pending-change', 'completed'
 ];

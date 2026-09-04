@@ -1,5 +1,16 @@
 # TODO
 
+## 2026-09-04 已完成
+
+### 新增「日常推进」任务状态
+
+- [x] TaskStatus 类型新增 `daily`（置于 `in-progress` 之后）
+- [x] statusLabels/statusColors 新增「日常推进」（secondary 色调）
+- [x] 侧边栏新增 CalendarDays 图标与蓝色图标色，状态计数自动生效
+- [x] 任务/子任务排序表（TaskDrawer、TaskContext）加入 daily
+- [x] 周报生成：主任务与子任务状态为「日常推进」时不输出进度百分比（列表 UI 进度条照常显示）
+- [x] 功能验证：Playwright 实测周报输出「日常推进」无百分比、其他状态百分比正常
+
 ## 2026-08-28 已完成
 
 ### 周任务视图功能

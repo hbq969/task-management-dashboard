@@ -674,7 +674,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       // 状态排序顺序（按显示顺序）
       const statusOrderList: TaskStatus[] = [
         'shelved', 'transferred',
-        'todo', 'pending-apply', 'review', 'researching', 'in-progress', 'processing',
+        'todo', 'pending-apply', 'review', 'researching', 'in-progress', 'daily', 'processing',
         'investigating', 'fixing', 'in-flow', 'designing', 'developing',
         'testing', 'pending-change', 'completed'
       ];
@@ -711,7 +711,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           if (assignee) {
             report += `- 负责人：${assignee}\n`;
           }
-          if (task.progress > 0) {
+          if (task.progress > 0 && task.status !== 'daily') {
             report += `- 进度：${task.progress}%\n`;
           }
           // 未结束的任务显示截止时间
@@ -742,7 +742,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
             sortedSubtasks.forEach((sub, i) => {
               const num = i < 20 ? circles[i] : `(${i + 1})`;
               let subLine = `  ${num} ${sub.title}（${statusLabels[sub.status]}`;
-              if (sub.progress > 0) subLine += `，${sub.progress}%`;
+              if (sub.progress > 0 && sub.status !== 'daily') subLine += `，${sub.progress}%`;
               if (sub.assignee) subLine += `，${sub.assignee}`;
               subLine += '）';
               report += subLine + '\n';
