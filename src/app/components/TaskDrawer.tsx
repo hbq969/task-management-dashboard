@@ -386,7 +386,8 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                 ))}
               </SelectContent>
             </Select>
-            <Popover>
+            {/* modal：抽屉内的滚动隔离会拦截弹层滚轮，开启后人员列表才可滚动 */}
+            <Popover modal>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="h-7 text-xs px-1.5 flex-1 min-w-0 gap-0.5 justify-start">
                   <Users className="w-3 h-3 shrink-0" />
