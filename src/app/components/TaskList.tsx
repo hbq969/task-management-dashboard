@@ -193,6 +193,9 @@ export function TaskList({ onEditTask, actionMessage }: TaskListProps) {
               task.dueDate &&
               new Date(task.dueDate) < new Date() &&
               task.status !== 'completed' && task.status !== 'ended';
+            const isCompleted = task.status === 'completed';
+            const isIntermediate = !isCompleted && task.status !== 'todo';
+            const progress = task.progress ?? 0;
 
             return (
               <motion.div
@@ -214,21 +217,29 @@ export function TaskList({ onEditTask, actionMessage }: TaskListProps) {
                         onCheckedChange={() => toggleTaskSelection(task.id)}
                         className="mt-0.5"
                       />
-                      {/* 状态切换按钮 - 圆形 */}
+                      {/* 状态切换按钮 - 圆形（中间状态按进度饼图填充，进度为 0 时显示中心点） */}
                       <button
                         onClick={() => handleStatusToggle(task)}
                         className={`
                           size-4 rounded-full border-2 flex items-center justify-center
                           transition-all duration-200 mt-0.5 shrink-0
-                          ${task.status === 'completed'
+                          ${isCompleted
                             ? 'bg-green-500 border-green-500 text-white'
                             : 'border-gray-300 hover:border-green-400 hover:bg-green-50'
                           }
                         `}
-                        title={task.status === 'completed' ? '标记为待办' : '标记为完成'}
+                        style={
+                          isIntermediate && progress > 0
+                            ? { backgroundImage: `conic-gradient(#22c55e ${progress}%, transparent 0)` }
+                            : undefined
+                        }
+                        title={isCompleted ? '标记为待办' : '标记为完成'}
                       >
-                        {task.status === 'completed' && (
+                        {isCompleted && (
                           <Check className="size-2.5" />
+                        )}
+                        {isIntermediate && progress === 0 && (
+                          <span className="size-1 rounded-full bg-green-500" />
                         )}
                       </button>
                       <div className="flex-1 min-w-0">

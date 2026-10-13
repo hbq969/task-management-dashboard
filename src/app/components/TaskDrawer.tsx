@@ -495,7 +495,11 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                 </div>
 
                 <div className="space-y-1">
-                  {formData.subtasks.map(subtask => (
+                  {formData.subtasks.map(subtask => {
+                    const isCompleted = subtask.status === 'completed';
+                    const isIntermediate = !isCompleted && subtask.status !== 'todo';
+                    const progress = subtask.progress ?? 0;
+                    return (
                     <div
                       key={subtask.id}
                       onDragOver={e => {
@@ -541,12 +545,20 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                           });
                         }}
                         className={`size-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                          subtask.status === 'completed'
+                          isCompleted
                             ? 'bg-green-500 border-green-500 text-white'
                             : 'border-gray-300 hover:border-green-400'
                         }`}
+                        style={
+                          isIntermediate && progress > 0
+                            ? { backgroundImage: `conic-gradient(#22c55e ${progress}%, transparent 0)` }
+                            : undefined
+                        }
                       >
-                        {subtask.status === 'completed' && <Check className="size-2.5" />}
+                        {isCompleted && <Check className="size-2.5" />}
+                        {isIntermediate && progress === 0 && (
+                          <span className="size-1 rounded-full bg-green-500" />
+                        )}
                       </button>
                       <Textarea
                         value={subtask.title}
@@ -604,7 +616,8 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
                         <X className="w-3.5 h-3.5" />
                       </Button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </>
             )}
