@@ -38,6 +38,7 @@ import { zhCN } from 'date-fns/locale';
 import { CalendarIcon, X, Tag as TagIcon, Users, Check, GripVertical, Trash2 } from 'lucide-react';
 import type { Task, Priority, TaskStatus, SubTask } from '../types/task';
 import { priorityLabels, statusLabels } from '../constants/taskLabels';
+import { createSubtask, updateSubtaskWithTimestamp } from '../utils/subtasks';
 
 // 子任务顺序以列表顺序为准（支持手动拖拽调整）。
 // 只有「已完成 / 未完成」之间切换时，才把该子任务移到对应分组的边界处。
@@ -187,19 +188,14 @@ export function TaskDrawer({ open, onClose, task }: TaskDrawerProps) {
   const handleAddSubtask = () => {
     const title = newSubtaskTitle.trim();
     if (!title) return;
-    const newSubtask: SubTask = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-      title,
-      status: 'todo' as TaskStatus,
-      progress: 0,
-    };
+    const newSubtask = createSubtask(title);
     setFormData(prev => ({ ...prev, subtasks: [...prev.subtasks, newSubtask] }));
     setNewSubtaskTitle('');
   };
 
   const handleUpdateSubtask = (id: string, updates: Partial<SubTask>) => {
     setFormData(prev => {
-      const next = prev.subtasks.map(s => (s.id === id ? { ...s, ...updates } : s));
+      const next = updateSubtaskWithTimestamp(prev.subtasks, id, updates);
       const wasCompleted = prev.subtasks.find(s => s.id === id)?.status === 'completed';
       const nowCompleted = updates.status === 'completed';
       // 仅在「已完成 / 未完成」之间真正切换时移动位置，其余改动保持手动顺序

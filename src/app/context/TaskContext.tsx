@@ -6,11 +6,11 @@ import {
   Person,
   getTimeRangeBounds,
   TaskStatus,
-  SubTask,
   ViewMode,
 } from '../types/task';
 import { statusLabels } from '../constants/taskLabels';
 import { readData, writeData, migrateFromLocalStorage, StorageData } from '../services/storage';
+import { backfillSubtaskTimestamps, mergeSubtasks } from '../utils/subtasks';
 
 interface TaskContextType {
   tasks: Task[];
@@ -198,7 +198,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           ...task,
           progress: task.progress ?? 0,
           relatedPersonIds: task.relatedPersonIds ?? [],
-          subtasks: task.subtasks ?? [],
+          subtasks: backfillSubtaskTimestamps(task.subtasks, task.createdAt, task.updatedAt),
         });
         const migratedTasks = data.tasks.map(migrateTask);
         setTasks(migratedTasks);
@@ -610,7 +610,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           ...task,
           progress: task.progress ?? 0,
           relatedPersonIds: task.relatedPersonIds ?? [],
-          subtasks: task.subtasks ?? [],
+          subtasks: backfillSubtaskTimestamps(task.subtasks, task.createdAt, task.updatedAt),
         });
         const migratedTasks = data.tasks.map(migrateTask);
 
@@ -798,31 +798,6 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     [tasks, weekTasks]
   );
 
-  // 子任务合并：标题相同覆盖，多出来的新增，全量有而周视图没有的保留
-  const mergeSubtasks = useCallback((masterSubs: SubTask[], weekSubs: SubTask[]): SubTask[] => {
-    const result = [...masterSubs];
-    for (const ws of weekSubs) {
-      const idx = result.findIndex(ms => ms.title === ws.title);
-      if (idx >= 0) {
-        // 标题相同 → 覆盖（保留全量子任务 id）
-        result[idx] = {
-          ...result[idx],
-          title: ws.title,
-          status: ws.status,
-          progress: ws.progress,
-          assignee: ws.assignee,
-        };
-      } else {
-        // 多出来的 → 新增
-        result.push({
-          ...ws,
-          id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        });
-      }
-    }
-    return result;
-  }, []);
-
   // 周视图更新进全量任务列表
   const mergeWeekToAll = useCallback((): { updated: number; added: number } => {
     let updated = 0;
@@ -873,7 +848,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setTasks(newTasks);
     setWeekTasks(newWeekTasks);
     return { updated, added };
-  }, [tasks, weekTasks, mergeSubtasks]);
+  }, [tasks, weekTasks]);
 
   const clearWeekTasks = useCallback(() => {
     setWeekTasks([]);
